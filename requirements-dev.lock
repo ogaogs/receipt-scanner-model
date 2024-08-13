@@ -10,3 +10,4 @@
 #   universal: false
 
 -e file:.
+ruff==0.5.7
