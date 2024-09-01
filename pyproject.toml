@@ -5,9 +5,7 @@ description = "Add your description here"
 authors = [
     { name = "AyumuOgasawara"}
 ]
-dependencies = [
-    "pre-commit>=3.8.0",
-]
+dependencies = []
 readme = "README.md"
 requires-python = ">= 3.11"
 
@@ -19,6 +17,8 @@ build-backend = "hatchling.build"
 managed = true
 dev-dependencies = [
     "ruff>=0.5.7",
+    "pyright>=1.1.378",
+    "pre-commit>=3.8.0",
 ]
 
 [tool.hatch.metadata]
