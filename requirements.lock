@@ -10,3 +10,9 @@
 #   universal: false
 
 -e file:.
+numpy==2.1.0
+    # via opencv-python
+opencv-python==4.10.0.84
+    # via receipt-scanner-model
+pillow==10.4.0
+    # via receipt-scanner-model
