@@ -29,3 +29,7 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/receipt_scanner_model"]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
