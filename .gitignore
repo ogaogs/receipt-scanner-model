@@ -1,3 +1,8 @@
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
+
 # python generated files
 __pycache__/
 *.py[oc]
@@ -11,3 +16,7 @@ wheels/
 
 ## vscode
 .vscode
+
+## images dir
+raw/
+output/

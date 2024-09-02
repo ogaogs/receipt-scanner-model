@@ -21,6 +21,12 @@ identify==2.6.0
 nodeenv==1.9.1
     # via pre-commit
     # via pyright
+numpy==2.1.0
+    # via opencv-python
+opencv-python==4.10.0.84
+    # via receipt-scanner-model
+pillow==10.4.0
+    # via receipt-scanner-model
 platformdirs==4.2.2
     # via virtualenv
 pre-commit==3.8.0
