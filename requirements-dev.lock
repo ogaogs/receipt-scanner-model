@@ -25,12 +25,17 @@ numpy==2.1.0
     # via opencv-python
 opencv-python==4.10.0.84
     # via receipt-scanner-model
+packaging==24.1
+    # via pytesseract
 pillow==10.4.0
+    # via pytesseract
     # via receipt-scanner-model
 platformdirs==4.2.2
     # via virtualenv
 pre-commit==3.8.0
 pyright==1.1.378
+pytesseract==0.3.13
+    # via receipt-scanner-model
 pyyaml==6.0.2
     # via pre-commit
 ruff==0.5.7

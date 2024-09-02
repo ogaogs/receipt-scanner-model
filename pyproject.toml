@@ -8,6 +8,7 @@ authors = [
 dependencies = [
     "pillow>=10.4.0",
     "opencv-python>=4.10.0.84",
+    "pytesseract>=0.3.13",
 ]
 readme = "README.md"
 requires-python = ">= 3.11"
@@ -28,7 +29,7 @@ dev-dependencies = [
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/receipt_scanner_model"]
+packages = ["src/receipt_scanner_model", "investigation"]
 
 [tool.pyright]
 venvPath = "."
