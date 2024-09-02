@@ -33,6 +33,19 @@ def get_text(image: Image.Image) -> str:
     return pytesseract.image_to_string(image, lang=LANG)
 
 
+def get_bounding_boxes(image_path: str) -> cv2.typing.MatLike:
+    """
+    バウンディングボックスを描画し、その画像を返す
+    """
+    img = cv2.imread(image_path)
+    d = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT, lang=LANG)
+    n_boxes = len(d["level"])
+    for i in range(n_boxes):
+        (x, y, w, h) = (d["left"][i], d["top"][i], d["width"][i], d["height"][i])
+        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    return img
+
+
 def scan(fp: str, out_dir: str) -> None:
     receipt_source_name = fp.split("/")[-1].replace(".jpeg", "")
     output_file_name = f"{out_dir}/{receipt_source_name}"
@@ -46,6 +59,10 @@ def scan(fp: str, out_dir: str) -> None:
     text = get_text(preprocessed_image)
     with open(f"{output_file_name}.txt", "w") as f:
         f.writelines(text)
+
+    # バウンディングボックスの取得
+    bounding_boxed_image = get_bounding_boxes(preprocessed_fp)
+    cv2.imwrite(f"{output_file_name}_boxes.png", bounding_boxed_image)
 
 
 def main() -> None:
