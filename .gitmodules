@@ -1,0 +1,3 @@
+[submodule "investigation/ocr_japanese"]
+	path = investigation/ocr_japanese
+	url = https://github.com/tanreinama/OCR_Japanease.git
