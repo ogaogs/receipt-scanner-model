@@ -1,0 +1,34 @@
+{
+  "sake": {
+    "actual": 800,
+    "predicted": 800
+  },
+  "musashi-no-mori": {
+    "actual": 1804,
+    "predicted": 1804
+  },
+  "gindaco": {
+    "actual": 626,
+    "predicted": 626
+  },
+  "coffee": {
+    "actual": 530,
+    "predicted": 530
+  },
+  "maneki-neko": {
+    "actual": 12080,
+    "predicted": 12080
+  },
+  "ok": {
+    "actual": 1125,
+    "predicted": 1125
+  },
+  "hub": {
+    "actual": 2160,
+    "predicted": 2160
+  },
+  "book-off": {
+    "actual": 990,
+    "predicted": 990
+  }
+}

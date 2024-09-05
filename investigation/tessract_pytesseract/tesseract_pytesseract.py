@@ -1,13 +1,13 @@
 from PIL import Image, ImageEnhance
 
 import cv2
-
 import glob
 import numpy as np
 
 import pytesseract
 import re
 
+import json
 
 LANG = "eng+jpn"
 
@@ -155,9 +155,20 @@ def scan(fp: str, out_dir: str) -> None:
     bounding_boxed_image = get_bounding_boxes(preprocessed_fp)
     cv2.imwrite(f"{output_file_name}_boxes.png", bounding_boxed_image)
 
-    # get the receipt total value
+    # レシートから合計を取得
     total = get_total(text)
-    print(total)
+
+    # 合計が正しいかを正解データと比較させる
+    with open("investigation/tessract_pytesseract/actual_totals.json", "r") as f:
+        actual_totals = json.load(f)
+    # predicted_totals.json の初期値は{}のみのjsonファイル
+    with open("investigation/tessract_pytesseract/predicted_totals.json", "r") as f:
+        predicted_totals = json.load(f)
+
+    actual_total = actual_totals[receipt_source_name]
+    predicted_totals[receipt_source_name] = {"actual": actual_total, "predicted": total}
+    with open("investigation/tessract_pytesseract/predicted_totals.json", "w") as f:
+        json.dump(predicted_totals, f, indent=2)
 
 
 # NOTE: ファイル名などをコマンドラインから取れるようにする。
