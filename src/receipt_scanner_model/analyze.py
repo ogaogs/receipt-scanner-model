@@ -137,8 +137,10 @@ def scan(fp: str) -> int:
 
 
 # NOTE: ファイル名などをコマンドラインから取れるようにする。
-def main(fp: str) -> None:
+# TODO: 画像データはbytesで渡す形にする。
+def main(fp: str) -> str:
     """
     実行するmain関数
     """
-    scan(fp=fp)
+    # total = scan(fp=fp)
+    return fp
