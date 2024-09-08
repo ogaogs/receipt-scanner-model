@@ -93,11 +93,11 @@ def dict_max(dict: dict) -> int:
     """
     合計金額となり得るものを数字の個数や、大きさから判断する
     """
-    max_counts_dict = [kv for kv in dict.items() if kv[1] == max(dict.values())]
-    if len(max_counts_dict) == 1:
-        return max_counts_dict[0][0]
+    max_counts = [kv for kv in dict.items() if kv[1] == max(dict.values())]
+    if len(max_counts) == 1:
+        return max_counts[0][0]
     else:
-        return max([max_counts_dict[i][0] for i in range(len(max_counts_dict))])
+        return max([count[0] for count in max_counts])
 
 
 def get_total(text: str) -> int:
