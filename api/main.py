@@ -1,13 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from src.receipt_scanner_model import analyze
-from pydantic import BaseModel
 import tomllib
-
-
-# TODO: fileの型をbytesに変更する
-class Receipt(BaseModel):
-    file: str
-
 
 with open("pyproject.toml", "rb") as f:
     data = tomllib.load(f)
@@ -25,9 +18,9 @@ async def root():
 
 
 @app.post("/receipt-analyze")
-async def receipt_analyze(receipt: Receipt):
+async def receipt_analyze(file: UploadFile = File(...)):
     """
     レシートの合計を返す
     """
-    total = analyze.main(receipt.file)
+    total = analyze.main(file.file.read())
     return {"total": total}
