@@ -4,6 +4,8 @@ from api.main import app
 
 client = TestClient(app)
 
+TEST_IMAGE_PATH = "/Users/ayumu/my-projects/receipt-scanner-model/raw/ok.jpeg"
+
 
 def test_root():
     """
@@ -20,11 +22,7 @@ def test_post_receipt_analyze():
     """
     response = client.post(
         "/receipt-analyze",
-        json={
-            "file": "/Users/ayumu/my-projects/receipt-scanner-model/raw/book-off.jpeg"
-        },
+        files={"file": open(TEST_IMAGE_PATH, "rb")},
     )
     assert response.status_code == 200
-    assert response.json() == {
-        "total": "/Users/ayumu/my-projects/receipt-scanner-model/raw/book-off.jpeg"
-    }
+    assert response.json() == {"total": 1125}
