@@ -72,6 +72,8 @@ pytesseract==0.3.13
 pytest==8.3.2
 python-dotenv==1.0.1
     # via uvicorn
+python-multipart==0.0.9
+    # via receipt-scanner-model
 pyyaml==6.0.2
     # via pre-commit
     # via uvicorn
