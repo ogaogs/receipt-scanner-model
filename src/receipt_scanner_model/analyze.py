@@ -6,15 +6,16 @@ import numpy as np
 import pytesseract
 import re
 
+from io import BytesIO
 
 LANG = "eng+jpn"
 
 
-def preprocessing(image_path: str) -> Image.Image:
+def preprocessing(image_bytes: bytes) -> Image.Image:
     """
     画像の前処理を行う
     """
-    img = Image.open(image_path)
+    img = Image.open(BytesIO(image_bytes))
     img = img.convert("L")
     img = ImageEnhance.Contrast(img).enhance(2)
 
@@ -119,13 +120,13 @@ def get_total(text: str) -> int:
     return get_most_likely(kws_dict, totals)
 
 
-def scan(fp: str) -> int:
+def scan(image_bytes: bytes) -> int:
     """
     レシートから最もらしい合計金額を出力する
     """
 
     # 画像の前処理
-    preprocessed_image = preprocessing(fp)
+    preprocessed_image = preprocessing(image_bytes)
 
     # textデータに変換
     text = get_text(preprocessed_image)
@@ -137,10 +138,9 @@ def scan(fp: str) -> int:
 
 
 # NOTE: ファイル名などをコマンドラインから取れるようにする。
-# TODO: 画像データはbytesで渡す形にする。
-def main(fp: str) -> str:
+def main(image_bytes: bytes) -> int:
     """
     実行するmain関数
     """
-    # total = scan(fp=fp)
-    return fp
+    total = scan(image_bytes=image_bytes)
+    return total
