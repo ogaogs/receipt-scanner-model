@@ -8,7 +8,14 @@ import re
 
 from io import BytesIO
 
+from typing import TypedDict
+
 LANG = "eng+jpn"
+
+
+class receipt_analyzed_data(TypedDict):
+    amount: int
+    text: str
 
 
 def preprocessing(image_bytes: bytes) -> Image.Image:
@@ -120,7 +127,7 @@ def get_total(text: str) -> int:
     return get_most_likely(kws_dict, totals)
 
 
-def scan(image_bytes: bytes) -> int:
+def scan(image_bytes: bytes) -> receipt_analyzed_data:
     """
     レシートから最もらしい合計金額を出力する
     """
@@ -134,13 +141,13 @@ def scan(image_bytes: bytes) -> int:
     # レシートから合計を取得
     total = get_total(text)
 
-    return total
+    return {"amount": total, "text": text}
 
 
 # NOTE: ファイル名などをコマンドラインから取れるようにする。
-def main(image_bytes: bytes) -> int:
+def main(image_bytes: bytes) -> receipt_analyzed_data:
     """
     実行するmain関数
     """
-    total = scan(image_bytes=image_bytes)
-    return total
+    analyzed_data = scan(image_bytes=image_bytes)
+    return analyzed_data
