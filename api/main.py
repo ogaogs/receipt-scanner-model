@@ -22,5 +22,5 @@ async def receipt_analyze(file: UploadFile = File(...)):
     """
     レシートの合計を返す
     """
-    total = analyze.main(file.file.read())
+    total = analyze.main(file.file.read())["amount"]
     return {"total": total}

@@ -11,4 +11,4 @@ def test_main():
     img_bytes = io.BytesIO()
     image.save(img_bytes, format="JPEG")
     img_bytes = img_bytes.getvalue()
-    assert isinstance(analyze.main(img_bytes), int)
+    assert isinstance(analyze.main(img_bytes)["amount"], int)
