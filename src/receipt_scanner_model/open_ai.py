@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 from openai import OpenAI
 from openai.types.chat import (
     ChatCompletionMessageParam,
@@ -7,9 +8,15 @@ from openai.types.chat import (
 from typing import TypedDict
 
 
+class ReceiptExtraction(BaseModel):
+    store_name: str | None
+    date: str | None
+    category: str | None
+
+
 class GPTResult(TypedDict):
     status: bool
-    content: str | None
+    content: str | ReceiptExtraction | None
 
 
 client = OpenAI()
@@ -34,12 +41,13 @@ def completion(system_prompt: str, user_prompt: str) -> GPTResult:
     messages.append(user_prompt_message)
 
     try:
-        response = client.chat.completions.create(
+        response = client.beta.chat.completions.parse(
             model=MODEL,
             messages=messages,
             temperature=TEMPERATURE,
             max_tokens=MAX_TOKENS,
+            response_format=ReceiptExtraction,
         )
-        return {"status": True, "content": response.choices[0].message.content}
+        return {"status": True, "content": response.choices[0].message.parsed}
     except Exception as e:
         return {"status": False, "content": str(e)}
