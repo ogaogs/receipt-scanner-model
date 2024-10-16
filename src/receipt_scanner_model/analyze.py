@@ -13,7 +13,7 @@ from typing import TypedDict
 LANG = "eng+jpn"
 
 
-class receipt_analyzed_data(TypedDict):
+class ReceiptAnalyzedData(TypedDict):
     amount: int
     text: str
 
@@ -90,7 +90,10 @@ def dict_max(dict: dict) -> int:
     if len(max_counts_dict) == 1:
         return max_counts_dict[0][0]
     else:
-        return max([max_counts_dict[i][0] for i in range(len(max_counts_dict))])
+        try:
+            return max([max_counts_dict[i][0] for i in range(len(max_counts_dict))])
+        except Exception:
+            return 0
 
 
 def get_total(text: str) -> int:
@@ -127,7 +130,7 @@ def get_total(text: str) -> int:
     return get_most_likely(kws_dict, totals)
 
 
-def scan(image_bytes: bytes) -> receipt_analyzed_data:
+def scan(image_bytes: bytes) -> ReceiptAnalyzedData:
     """
     レシートから最もらしい合計金額を出力する
     """
@@ -145,7 +148,7 @@ def scan(image_bytes: bytes) -> receipt_analyzed_data:
 
 
 # NOTE: ファイル名などをコマンドラインから取れるようにする。
-def main(image_bytes: bytes) -> receipt_analyzed_data:
+def main(image_bytes: bytes) -> ReceiptAnalyzedData:
     """
     実行するmain関数
     """
