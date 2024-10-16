@@ -9,7 +9,7 @@ class ReceiptDetail(TypedDict):
     category: str | None
 
 
-IMAGE = "/Users/ayumu/my-projects/receipt-scanner-model/raw/IMG_9159.JPG"
+IMAGE = "/Users/ayumu/my-projects/receipt-scanner-model/raw/sake.jpeg"
 SYSTEM_PROMPT = """
 あなたはレシートのテキストから家計簿をつけるロボットです。
 与えられるデータはレシートをOCRしたテキストデータです。
@@ -21,7 +21,7 @@ SYSTEM_PROMPT = """
 取得できない場合は None としてください。
 
 ## store_name
-取得した店名を取得してください。
+取得した店名を取得してください。不自然なスペースがある際はスペースを削除してください。
 上に記載されることが多いです。取得できない場合は None としてください。
 
 ## date
@@ -56,6 +56,3 @@ def get_receipt_detail(image: str) -> ReceiptDetail:
         }
     else:
         return {"store_name": None, "amount": 0, "date": None, "category": None}
-
-
-print(get_receipt_detail(IMAGE))
