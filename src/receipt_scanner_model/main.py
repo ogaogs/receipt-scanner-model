@@ -1,38 +1,61 @@
 from src.receipt_scanner_model import analyze, parse_bytes, open_ai
+from typing import TypedDict
 
 
-IMAGE = "/Users/ayumu/my-projects/receipt-scanner-model/raw/book-off.png"
+class ReceiptDetail(TypedDict):
+    store_name: str | None
+    amount: int
+    date: str | None
+    category: str | None
+
+
+IMAGE = "/Users/ayumu/my-projects/receipt-scanner-model/raw/IMG_9159.JPG"
 SYSTEM_PROMPT = """
 あなたはレシートのテキストから家計簿をつけるロボットです。
-レシートのテキストが与えられます。以下を取得してください。
+与えられるデータはレシートをOCRしたテキストデータです。
+以下の項目を抽出してください。
 
-## 取得する項目
-- 買い物した店名
-- 買い物した日付
-- 買い物のカテゴリー
-
+## category
 買い物のカテゴリーは以下の中から最も適切なカテゴリーを選択してください。
 カテゴリー：["食費"、"水道光熱費"、"家賃"、"娯楽"、"衣服・美容"、"日用品"、"病院代"、"交通費"、"その他"]
+取得できない場合は None としてください。
 
-与えられたレシートのテキストから以下の項目を取得し、出力項目に沿って教えてください。
+## store_name
+取得した店名を取得してください。
+上に記載されることが多いです。取得できない場合は None としてください。
 
-## カテゴリー
-取得したカテゴリーを教えてください。
-
-## 店名
-取得した店名を教えてください。
-
-## 日付
-取得した日付を教えてください。
+## date
+取得した日付を"YYYY/MM/DD"の形式で取得してください。
+商品の上に記載されることが多いです。取得できない場合は None としてください。
 
 """
 
 
-def get_receipt_detail(image: str):
-    img_bytes = parse_bytes.imgstr_to_bytes(IMAGE)
+def get_receipt_detail(image: str) -> ReceiptDetail:
+    """レシートの解析を行い、ReceiptDetailを返す
+
+    Args:
+        image (str): 画像データ(現在はファイルパス)
+
+    Returns:
+        ReceiptDetail: 店名、金額、日付、カテゴリー
+    """
+    img_bytes = parse_bytes.imgstr_to_bytes(image)
     analyzed_date = analyze.scan(img_bytes)
     result = open_ai.completion(SYSTEM_PROMPT, analyzed_date["text"])
-    print(result["content"])
+    content = result["content"]
+    if not result["status"]:
+        print(content)
+
+    if isinstance(content, open_ai.ReceiptExtraction):
+        return {
+            "store_name": content.store_name,
+            "amount": analyzed_date["amount"],
+            "date": content.date,
+            "category": content.category,
+        }
+    else:
+        return {"store_name": None, "amount": 0, "date": None, "category": None}
 
 
-get_receipt_detail(IMAGE)
+print(get_receipt_detail(IMAGE))
