@@ -1,4 +1,4 @@
-from src.receipt_scanner_model import analyze, parse_bytes, open_ai
+from src.receipt_scanner_model import analyze, open_ai, file_operations
 from typing import TypedDict
 
 
@@ -9,7 +9,6 @@ class ReceiptDetail(TypedDict):
     category: str | None
 
 
-IMAGE = "/Users/ayumu/my-projects/receipt-scanner-model/raw/sake.jpeg"
 SYSTEM_PROMPT = """
 あなたはレシートのテキストから家計簿をつけるロボットです。
 与えられるデータはレシートをOCRしたテキストデータです。
@@ -35,12 +34,12 @@ def get_receipt_detail(image: str) -> ReceiptDetail:
     """レシートの解析を行い、ReceiptDetailを返す
 
     Args:
-        image (str): 画像データ(現在はファイルパス)
+        image (str): s3上のファイル名
 
     Returns:
         ReceiptDetail: 店名、金額、日付、カテゴリー
     """
-    img_bytes = parse_bytes.imgstr_to_bytes(image)
+    img_bytes = file_operations.download_img_to_bytes(image)
     analyzed_date = analyze.scan(img_bytes)
     result = open_ai.completion(SYSTEM_PROMPT, analyzed_date["text"])
     content = result["content"]
