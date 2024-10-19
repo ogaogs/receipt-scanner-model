@@ -18,7 +18,7 @@ class ReceiptAnalyzedData(TypedDict):
     text: str
 
 
-def preprocessing(image_bytes: bytes) -> Image.Image:
+def preprocess_image(image_bytes: bytes) -> Image.Image:
     """
     画像の前処理を行う
     """
@@ -33,14 +33,14 @@ def preprocessing(image_bytes: bytes) -> Image.Image:
     return img
 
 
-def get_text(image: Image.Image) -> str:
+def extract_text_from_image(image: Image.Image) -> str:
     """
     画像データをtextに変換
     """
     return pytesseract.image_to_string(image, lang=LANG)
 
 
-def find_total_from_line(line):
+def extract_amount_from_line(line):
     """
     1行ごとに金額を取得
     """
@@ -52,51 +52,61 @@ def find_total_from_line(line):
         return int(re.sub(r"[^\d]", "", numbers[-1]))
 
 
-def clean_line(line):
+def clean_text_line(line):
     """
     空白を削除し行を整える
     """
     return line.replace(" ", "").lower()
 
 
-# NOTE: dictは型定義をTypedDictとかで行う。
-def get_most_likely(keywords_dict: dict[str, list[int]], count_dict: dict) -> int:
+def get_most_likely(
+    kws_amount_dict: dict[str, list[int]], count_amount_dict: dict[int, int]
+) -> int:
     """
     合計金額の可能性がある数字を返す
     """
     all_totals = []
-    for totals_found in keywords_dict.values():
+    for totals_found in kws_amount_dict.values():
         all_totals += totals_found
     n_unique_totals = len(set(all_totals))
     if n_unique_totals == 1:
         return all_totals[0]
 
+    high_potential_totals = []
+
     for predictive_keyword in ["合計", "paypay", "クレジット"]:
-        predictions = keywords_dict.get(predictive_keyword)
+        predictions = kws_amount_dict.get(predictive_keyword)
         if predictions:
             n_unique_predictions = len(set(predictions))
             if n_unique_predictions == 1:
-                return predictions[0]
+                high_potential_totals.append(predictions[0])
             else:
-                return max(predictions)
-    return dict_max(count_dict)
+                high_potential_totals.append(max(predictions))
+
+    if high_potential_totals:
+        return max(high_potential_totals)
+
+    return dict_max(count_amount_dict)
 
 
-def dict_max(dict: dict) -> int:
+def dict_max(count_amount_dict: dict[int, int]) -> int:
     """
     合計金額となり得るものを数字の個数や、大きさから判断する
     """
-    max_counts_dict = [kv for kv in dict.items() if kv[1] == max(dict.values())]
-    if len(max_counts_dict) == 1:
-        return max_counts_dict[0][0]
-    else:
-        try:
-            return max([max_counts_dict[i][0] for i in range(len(max_counts_dict))])
-        except Exception:
+    max_counts_list = [
+        k for k, v in count_amount_dict.items() if v == max(count_amount_dict.values())
+    ]
+    dict_len = len(max_counts_list)
+    match dict_len:
+        case 0:
             return 0
+        case 1:
+            return max_counts_list[0]
+        case _:
+            return max(max_counts_list)
 
 
-def get_total(text: str) -> int:
+def extract_total_amount(text: str) -> int:
     """
     レシートのテキストデータから合計を取得する
     """
@@ -106,15 +116,15 @@ def get_total(text: str) -> int:
     # 商品の点数など、取得したくないものを illegal_keywords に入れる
     illegal_keywords = ["点数", "お釣り"]
 
-    kws_dict = {word: [] for word in keywords}
+    kws_amount_dict = {word: [] for word in keywords}
 
     # テキストデータを1行ずつに分け、合計となり得るものを kws_dict に入れていく
     for line in text.splitlines():
-        line_clean = clean_line(line)
+        line_clean = clean_text_line(line)
         found = [word for word in keywords if word in line_clean]
         found_illegal = [word for word in illegal_keywords if word in line_clean]
         if len(found) > 0 and len(found_illegal) == 0:
-            total = find_total_from_line(line_clean)
+            total = extract_amount_from_line(line_clean)
             if total is not None:
                 # totalsに取得したtotalがない場合、追加する
                 if not totals.get(total):
@@ -125,9 +135,9 @@ def get_total(text: str) -> int:
 
                 # kws_dict に totalを追加する
                 for i in found:
-                    kws_dict[i].append(total)
+                    kws_amount_dict[i].append(total)
 
-    return get_most_likely(kws_dict, totals)
+    return get_most_likely(kws_amount_dict, totals)
 
 
 def scan(image_bytes: bytes) -> ReceiptAnalyzedData:
@@ -136,18 +146,17 @@ def scan(image_bytes: bytes) -> ReceiptAnalyzedData:
     """
 
     # 画像の前処理
-    preprocessed_image = preprocessing(image_bytes)
+    preprocessed_image = preprocess_image(image_bytes)
 
     # textデータに変換
-    text = get_text(preprocessed_image)
+    text = extract_text_from_image(preprocessed_image)
 
     # レシートから合計を取得
-    total = get_total(text)
+    total = extract_total_amount(text)
 
     return {"amount": total, "text": text}
 
 
-# NOTE: ファイル名などをコマンドラインから取れるようにする。
 def main(image_bytes: bytes) -> ReceiptAnalyzedData:
     """
     実行するmain関数
