@@ -27,6 +27,15 @@ MAX_TOKENS = 2000
 
 
 def completion(system_prompt: str, user_prompt: str) -> GPTResult:
+    """GPTからレシートの「店名」「日付」「カテゴリー」を取得する
+
+    Args:
+        system_prompt (str): システムプロンプト
+        user_prompt (str): ユーザープロンプト
+
+    Returns:
+        GPTResult: 実行結果のステータス、実行結果 | エラーメッセージ
+    """
     messages: list[ChatCompletionMessageParam] = []
     system_prompt_message: ChatCompletionSystemMessageParam = {
         "role": "system",

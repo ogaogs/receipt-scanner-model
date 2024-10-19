@@ -19,51 +19,84 @@ class ReceiptAnalyzedData(TypedDict):
 
 
 def preprocess_image(image_bytes: bytes) -> Image.Image:
+    """画像の前処理を行う
+
+    Args:
+        image_bytes (bytes): 画像のバイトデータ
+
+    Returns:
+        Image.Image: 画像データ
     """
-    画像の前処理を行う
-    """
+    # 画像の読み込み
     img = Image.open(BytesIO(image_bytes))
+
+    # グレースケールに変換
     img = img.convert("L")
+
+    # コントラストを強調
     img = ImageEnhance.Contrast(img).enhance(2)
 
+    # ノイズ除去
     cv2_img = np.array(img, dtype=np.uint8)
     cv2_img = cv2.fastNlMeansDenoising(cv2_img, None, 20)
 
+    # NumPy配列 -> PIL画像
     img = Image.fromarray(cv2_img)
     return img
 
 
 def extract_text_from_image(image: Image.Image) -> str:
-    """
-    画像データをtextに変換
+    """画像データをtextに変換
+
+    Args:
+        image (Image.Image): 画像データ
+
+    Returns:
+        str: 画像のテキストデータ
     """
     return pytesseract.image_to_string(image, lang=LANG)
 
 
-def extract_amount_from_line(line):
-    """
-    1行ごとに金額を取得
+def extract_amount_from_line(text_line: str) -> int | None:
+    """1行ごとの文字列から金額を取得
+
+    Args:
+        text_line (str): 1行ごとの文字列
+
+    Returns:
+        int | None: 抽出した数字
     """
     # 正規表現で数字を取得する。
-    numbers = re.findall(r"\d*[,.]{1}\d{3}|\d+", line)
+    numbers = re.findall(r"\d*[,.]{1}\d{3}|\d+", text_line)
 
     # 金額は右側に書かれることが多いため、複数ある場合は、最後の値を取得するようにする。
     if len(numbers) > 0:
         return int(re.sub(r"[^\d]", "", numbers[-1]))
 
 
-def clean_text_line(line):
+def clean_text_line(text_line: str) -> str:
+    """空白を削除し行を整える
+
+    Args:
+        text_line (str): 1行毎の文字列
+
+    Returns:
+        str: 空白をなくした文字列
     """
-    空白を削除し行を整える
-    """
-    return line.replace(" ", "").lower()
+    return text_line.replace(" ", "").lower()
 
 
 def get_most_likely(
     kws_amount_dict: dict[str, list[int]], count_amount_dict: dict[int, int]
 ) -> int:
-    """
-    合計金額の可能性がある数字を返す
+    """合計金額の可能性がある数字を返す
+
+    Args:
+        kws_amount_dict (dict[str, list[int]]): keyにキーワード、valueにそのキーワードに付随する数字
+        count_amount_dict (dict[int, int]): keyに抽出された数字、valueに抽出された回数
+
+    Returns:
+        int: 最も合計らしい数字
     """
     all_totals = []
     for totals_found in kws_amount_dict.values():
@@ -90,8 +123,13 @@ def get_most_likely(
 
 
 def dict_max(count_amount_dict: dict[int, int]) -> int:
-    """
-    合計金額となり得るものを数字の個数や、大きさから判断する
+    """合計金額となり得るものを数字の個数や、大きさから判断する
+
+    Args:
+        count_amount_dict (dict[int, int]): keyに抽出された数字、valueに抽出された回数
+
+    Returns:
+        int: 最も合計らしい数字
     """
     max_counts_list = [
         k for k, v in count_amount_dict.items() if v == max(count_amount_dict.values())
@@ -107,8 +145,13 @@ def dict_max(count_amount_dict: dict[int, int]) -> int:
 
 
 def extract_total_amount(text: str) -> int:
-    """
-    レシートのテキストデータから合計を取得する
+    """レシートのテキストデータから合計を取得する
+
+    Args:
+        text (str): レシートのテキストデータ
+
+    Returns:
+        int: 合計金額
     """
     totals = {}
     # 合計金額が書かれていやすいものを keywords に入れる
@@ -119,13 +162,13 @@ def extract_total_amount(text: str) -> int:
     kws_amount_dict = {word: [] for word in keywords}
 
     # テキストデータを1行ずつに分け、合計となり得るものを kws_dict に入れていく
-    for line in text.splitlines():
-        line_clean = clean_text_line(line)
-        found = [word for word in keywords if word in line_clean]
-        found_illegal = [word for word in illegal_keywords if word in line_clean]
+    for text_line in text.splitlines():
+        text_line_clean = clean_text_line(text_line)
+        found = [word for word in keywords if word in text_line_clean]
+        found_illegal = [word for word in illegal_keywords if word in text_line_clean]
         if len(found) > 0 and len(found_illegal) == 0:
-            total = extract_amount_from_line(line_clean)
-            if total is not None:
+            total = extract_amount_from_line(text_line_clean)
+            if total:
                 # totalsに取得したtotalがない場合、追加する
                 if not totals.get(total):
                     totals[total] = 1
@@ -141,8 +184,13 @@ def extract_total_amount(text: str) -> int:
 
 
 def scan(image_bytes: bytes) -> ReceiptAnalyzedData:
-    """
-    レシートから最もらしい合計金額を出力する
+    """レシートから最もらしい合計金額を出力する
+
+    Args:
+        image_bytes (bytes): 画像のバイトデータ
+
+    Returns:
+        ReceiptAnalyzedData: 合計金額とレシートのOCR結果
     """
 
     # 画像の前処理
@@ -155,11 +203,3 @@ def scan(image_bytes: bytes) -> ReceiptAnalyzedData:
     total = extract_total_amount(text)
 
     return {"amount": total, "text": text}
-
-
-def main(image_bytes: bytes) -> ReceiptAnalyzedData:
-    """
-    実行するmain関数
-    """
-    analyzed_data = scan(image_bytes=image_bytes)
-    return analyzed_data
