@@ -72,14 +72,20 @@ def get_most_likely(
     if n_unique_totals == 1:
         return all_totals[0]
 
+    high_potential_totals = []
+
     for predictive_keyword in ["合計", "paypay", "クレジット"]:
         predictions = kws_amount_dict.get(predictive_keyword)
         if predictions:
             n_unique_predictions = len(set(predictions))
             if n_unique_predictions == 1:
-                return predictions[0]
+                high_potential_totals.append(predictions[0])
             else:
-                return max(predictions)
+                high_potential_totals.append(max(predictions))
+
+    if high_potential_totals:
+        return max(high_potential_totals)
+
     return dict_max(count_amount_dict)
 
 
@@ -87,8 +93,9 @@ def dict_max(count_amount_dict: dict[int, int]) -> int:
     """
     合計金額となり得るものを数字の個数や、大きさから判断する
     """
-    max_count_value = max(count_amount_dict.values())
-    max_counts_list = [k for k, v in count_amount_dict.items() if v == max_count_value]
+    max_counts_list = [
+        k for k, v in count_amount_dict.items() if v == max(count_amount_dict.values())
+    ]
     dict_len = len(max_counts_list)
     match dict_len:
         case 0:
