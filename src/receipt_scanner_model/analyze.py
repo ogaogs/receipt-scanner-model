@@ -88,18 +88,16 @@ def dict_max(count_amount_dict: dict) -> int:
     """
     合計金額となり得るものを数字の個数や、大きさから判断する
     """
-    max_counts_dict = [
-        kv
-        for kv in count_amount_dict.items()
-        if kv[1] == max(count_amount_dict.values())
-    ]
-    if len(max_counts_dict) == 1:
-        return max_counts_dict[0][0]
-    else:
-        try:
-            return max([max_counts_dict[i][0] for i in range(len(max_counts_dict))])
-        except Exception:
+    max_count_value = max(count_amount_dict.values())
+    max_counts_list = [k for k, v in count_amount_dict.items() if v == max_count_value]
+    dict_len = len(max_counts_list)
+    match dict_len:
+        case 0:
             return 0
+        case 1:
+            return max_counts_list[0][0]
+        case _:
+            return max(max_counts_list)
 
 
 def extract_total_amount(text: str) -> int:
