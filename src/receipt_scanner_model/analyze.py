@@ -59,9 +59,8 @@ def clean_text_line(line):
     return line.replace(" ", "").lower()
 
 
-# NOTE: dictは型定義をTypedDictとかで行う。
 def get_most_likely(
-    kws_amount_dict: dict[str, list[int]], count_amount_dict: dict
+    kws_amount_dict: dict[str, list[int]], count_amount_dict: dict[int, int]
 ) -> int:
     """
     合計金額の可能性がある数字を返す
@@ -84,7 +83,7 @@ def get_most_likely(
     return dict_max(count_amount_dict)
 
 
-def dict_max(count_amount_dict: dict) -> int:
+def dict_max(count_amount_dict: dict[int, int]) -> int:
     """
     合計金額となり得るものを数字の個数や、大きさから判断する
     """
@@ -95,7 +94,7 @@ def dict_max(count_amount_dict: dict) -> int:
         case 0:
             return 0
         case 1:
-            return max_counts_list[0][0]
+            return max_counts_list[0]
         case _:
             return max(max_counts_list)
 
