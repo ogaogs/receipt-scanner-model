@@ -1,4 +1,4 @@
-from src.receipt_scanner_model import open_ai, file_operations, scan_receipt
+from src.receipt_scanner_model import open_ai, scan_receipt
 from typing import TypedDict
 
 
@@ -30,16 +30,15 @@ SYSTEM_PROMPT = """
 """
 
 
-def get_receipt_detail(image: str) -> ReceiptDetail:
+def get_receipt_detail(img_bytes: bytes) -> ReceiptDetail:
     """レシートの解析を行い、ReceiptDetailを返す
 
     Args:
-        image (str): s3上のファイル名
+        pre_signed_url (str): ダウンロード用のpre_signed_url
 
     Returns:
         ReceiptDetail: 店名、金額、日付、カテゴリー
     """
-    img_bytes = file_operations.download_img_to_bytes(image)
     analyzed_date = scan_receipt.scan(img_bytes)
     result = open_ai.completion(SYSTEM_PROMPT, analyzed_date["text"])
     content = result["content"]
