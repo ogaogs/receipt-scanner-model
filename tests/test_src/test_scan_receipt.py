@@ -1,4 +1,4 @@
-from src.receipt_scanner_model import analyze
+from src.receipt_scanner_model import scan_receipt
 from PIL import Image
 import io
 
@@ -12,21 +12,21 @@ def test_main():
     image.save(img_bytes, format="JPEG")
     img_bytes = img_bytes.getvalue()
     expected = 1125
-    actual = analyze.main(img_bytes)["amount"]
+    actual = scan_receipt.scan(img_bytes)["amount"]
     assert expected == actual
 
 
 def test_dict_max_empty():
     amount_dict = {}
     expected = 0
-    actual = analyze.dict_max(amount_dict)
+    actual = scan_receipt.dict_max(amount_dict)
     assert expected == actual
 
 
 def test_dict_max():
     amount_dict = {1042: 1, 1: 1, 1125: 2}
     expected = 1125
-    actual = analyze.dict_max(amount_dict)
+    actual = scan_receipt.dict_max(amount_dict)
     assert expected == actual
 
 
@@ -42,5 +42,5 @@ def test_get_most_likely():
     }
     count_amount_dict = {1042: 2, 1: 2, 1125: 1}
     expected = 1125
-    actual = analyze.get_most_likely(kws_amount_dict, count_amount_dict)
+    actual = scan_receipt.get_most_likely(kws_amount_dict, count_amount_dict)
     assert expected == actual

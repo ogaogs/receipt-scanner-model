@@ -1,4 +1,4 @@
-from src.receipt_scanner_model import analyze, open_ai, file_operations
+from src.receipt_scanner_model import open_ai, file_operations, scan_receipt
 from typing import TypedDict
 
 
@@ -40,7 +40,7 @@ def get_receipt_detail(image: str) -> ReceiptDetail:
         ReceiptDetail: 店名、金額、日付、カテゴリー
     """
     img_bytes = file_operations.download_img_to_bytes(image)
-    analyzed_date = analyze.scan(img_bytes)
+    analyzed_date = scan_receipt.scan(img_bytes)
     result = open_ai.completion(SYSTEM_PROMPT, analyzed_date["text"])
     content = result["content"]
     if not result["status"]:

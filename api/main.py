@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File
-from src.receipt_scanner_model import analyze
+from src.receipt_scanner_model import scan_receipt
 import tomllib
 
 with open("pyproject.toml", "rb") as f:
@@ -17,10 +17,10 @@ async def root():
     return {"version": app.version}
 
 
-@app.post("/receipt-analyze")
+@app.post("/scan-receipt")
 async def receipt_analyze(file: UploadFile = File(...)):
     """
     レシートの合計を返す
     """
-    total = analyze.scan(file.file.read())["amount"]
+    total = scan_receipt.scan(file.file.read())["amount"]
     return {"total": total}
