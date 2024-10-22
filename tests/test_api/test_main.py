@@ -21,7 +21,7 @@ def test_post_receipt_analyze():
     レシートのfpを確認するテスト
     """
     response = client.post(
-        "/receipt-analyze",
+        "/scan-receipt",
         files={"file": open(TEST_IMAGE_PATH, "rb")},
     )
     assert response.status_code == 200

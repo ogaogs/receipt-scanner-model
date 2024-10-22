@@ -25,6 +25,9 @@ botocore==1.35.42
 certifi==2024.8.30
     # via httpcore
     # via httpx
+    # via requests
+charset-normalizer==3.4.0
+    # via requests
 click==8.1.7
     # via uvicorn
 distro==1.9.0
@@ -43,6 +46,7 @@ httpx==0.27.2
 idna==3.8
     # via anyio
     # via httpx
+    # via requests
 jiter==0.6.1
     # via openai
 jmespath==1.0.1
@@ -74,6 +78,8 @@ python-multipart==0.0.9
     # via receipt-scanner-model
 pyyaml==6.0.2
     # via uvicorn
+requests==2.32.3
+    # via receipt-scanner-model
 s3transfer==0.10.3
     # via boto3
 six==1.16.0
@@ -95,6 +101,7 @@ tzdata==2024.1
     # via pydantic
 urllib3==2.2.3
     # via botocore
+    # via requests
 uvicorn==0.30.6
     # via receipt-scanner-model
 uvloop==0.20.0
