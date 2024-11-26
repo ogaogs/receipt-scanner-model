@@ -1,10 +1,16 @@
+import os
 from fastapi.testclient import TestClient
 
 from api.main import app
 
 client = TestClient(app)
 
-TEST_IMAGE_PATH = "/Users/ayumu/my-projects/receipt-scanner-model/raw/ok.jpeg"
+
+# 現在のスクリプトのディレクトリを取得
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# 相対パスで画像ファイルを指定
+TEST_IMAGE_PATH = os.path.join(current_dir, "../../raw/ok.jpeg")
 
 
 def test_root():

@@ -1,9 +1,13 @@
+import os
 from src.receipt_scanner_model import scan_receipt
 from PIL import Image
 import io
 
+# 現在のスクリプトのディレクトリを取得
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
-TEST_IMAGE_PATH = "/Users/ayumu/my-projects/receipt-scanner-model/raw/ok.jpeg"
+# 相対パスで画像ファイルを指定
+TEST_IMAGE_PATH = os.path.join(current_dir, "../../raw/ok.jpeg")
 
 
 def test_main():
