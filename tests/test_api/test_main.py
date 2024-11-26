@@ -24,7 +24,7 @@ def test_root():
 
 def test_post_receipt_analyze():
     """
-    レシートのfpを確認するテスト
+    レシートの合計金額を取得するテスト
     """
     response = client.post(
         "/scan-receipt",
