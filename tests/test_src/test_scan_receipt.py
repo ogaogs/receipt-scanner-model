@@ -1,12 +1,19 @@
+import os
 from src.receipt_scanner_model import scan_receipt
 from PIL import Image
 import io
 
+# 現在のスクリプトのディレクトリを取得
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
-TEST_IMAGE_PATH = "/Users/ayumu/my-projects/receipt-scanner-model/raw/ok.jpeg"
+# 相対パスで画像ファイルを指定
+TEST_IMAGE_PATH = os.path.join(current_dir, "../../raw/ok.jpeg")
 
 
 def test_main():
+    """
+    レシートの合計金額を取得する関数のテスト
+    """
     image = Image.open(TEST_IMAGE_PATH)
     img_bytes = io.BytesIO()
     image.save(img_bytes, format="JPEG")
@@ -17,6 +24,9 @@ def test_main():
 
 
 def test_dict_max_empty():
+    """
+    amount_dictが{}の場合のdict_max関数のテスト
+    """
     amount_dict = {}
     expected = 0
     actual = scan_receipt.dict_max(amount_dict)
@@ -24,6 +34,9 @@ def test_dict_max_empty():
 
 
 def test_dict_max():
+    """
+    dict_max関数のテスト
+    """
     amount_dict = {1042: 1, 1: 1, 1125: 2}
     expected = 1125
     actual = scan_receipt.dict_max(amount_dict)
@@ -31,6 +44,9 @@ def test_dict_max():
 
 
 def test_get_most_likely():
+    """
+    get_most_likely関数のテスト
+    """
     kws_amount_dict = {
         "合計": [1],
         "小計": [1042],
