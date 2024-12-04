@@ -53,6 +53,7 @@ class ReceiptDetail(TypedDict):
 
 | 技術/ライブラリ                                          | バージョン   | 説明                                 |
 | -------------------------------------------------------- | ------------ | ------------------------------------ |
+| [Tesseract](https://github.com/tesseract-ocr/tesseract)  | = 5.5.0      | OCR ライブラリ                       |
 | [Python](https://www.python.org/)                        | >= 3.11      | Python                               |
 | [Pillow](https://pypi.org/project/pillow/)               | >= 10.4.0    | 画像処理ライブラリ                   |
 | [OpenCV-Python](https://pypi.org/project/opencv-python/) | >= 4.10.0.84 | コンピュータビジョンライブラリ       |
@@ -85,10 +86,20 @@ export OPENAI_API_KEY="<OpenAIのAPIキー>"
 
 ### 実行方法
 
-- 以下のコマンドで http://127.0.0.1:8000 で実行される
+- 以下のコマンドで http://localhost:8000 で実行される
 
 ```sh
 uvicorn api.main:app --reload
+```
+
+### Docker
+
+- 以下のコマンドで http://localhost:8000 で実行される
+
+```sh
+docker build . -t receipt-scanner-model --build-arg PYTHON_VERSION="$(cat .python-version)"
+
+docker run -p 127.0.0.1:8000:8000 -e OPENAI_API_KEY receipt-scanner-model
 ```
 
 ## 開発者向け
