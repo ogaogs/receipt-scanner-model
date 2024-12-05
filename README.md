@@ -51,19 +51,19 @@ class ReceiptDetail(TypedDict):
 
 ## 技術スタック
 
-| 技術/ライブラリ                                          | バージョン   | 説明                                 |
-| -------------------------------------------------------- | ------------ | ------------------------------------ |
-| [Tesseract](https://github.com/tesseract-ocr/tesseract)  | = 5.5.0      | OCR ライブラリ                       |
-| [Python](https://www.python.org/)                        | >= 3.11      | Python                               |
-| [Pillow](https://pypi.org/project/pillow/)               | >= 10.4.0    | 画像処理ライブラリ                   |
-| [OpenCV-Python](https://pypi.org/project/opencv-python/) | >= 4.10.0.84 | コンピュータビジョンライブラリ       |
-| [PyTesseract](https://pypi.org/project/pytesseract/)     | >= 0.3.13    | OCR（光学文字認識）ライブラリ        |
-| [FastAPI](https://fastapi.tiangolo.com/ja/)              | >= 0.114.0   | Python Web フレームワーク            |
-| [Uvicorn](https://www.uvicorn.org/)                      | >= 0.30.6    | ASGI Web サーバー                    |
-| [Python-Multipart](https://multipart.fastapiexpert.com/) | >= 0.0.9     | マルチパートファイルアップロード対応 |
-| [OpenAI](https://openai.com/index/openai-api/)           | >= 1.51.2    | OpenAI API クライアント              |
-| [Boto3](https://aws.amazon.com/jp/sdk-for-python/)       | >= 1.35.42   | AWS SDK for Python                   |
-| [Requests](https://pypi.org/project/requests/)           | >= 2.32.3    | HTTP リクエストライブラリ            |
+| 技術/ライブラリ                                                            | バージョン   | 説明                                 |
+| -------------------------------------------------------------------------- | ------------ | ------------------------------------ |
+| [Tesseract](https://github.com/tesseract-ocr/tesseract)                    | = 5.5.0      | OCR ライブラリ                       |
+| [Python](https://www.python.org/)                                          | >= 3.11      | Python                               |
+| [Pillow](https://pypi.org/project/pillow/)                                 | >= 10.4.0    | 画像処理ライブラリ                   |
+| [OpenCV-Python-Headless](https://pypi.org/project/opencv-python-headless/) | >= 4.10.0.84 | コンピュータビジョンライブラリ       |
+| [PyTesseract](https://pypi.org/project/pytesseract/)                       | >= 0.3.13    | OCR（光学文字認識）ライブラリ        |
+| [FastAPI](https://fastapi.tiangolo.com/ja/)                                | >= 0.114.0   | Python Web フレームワーク            |
+| [Uvicorn](https://www.uvicorn.org/)                                        | >= 0.30.6    | ASGI Web サーバー                    |
+| [Python-Multipart](https://multipart.fastapiexpert.com/)                   | >= 0.0.9     | マルチパートファイルアップロード対応 |
+| [OpenAI](https://openai.com/index/openai-api/)                             | >= 1.51.2    | OpenAI API クライアント              |
+| [Boto3](https://aws.amazon.com/jp/sdk-for-python/)                         | >= 1.35.42   | AWS SDK for Python                   |
+| [Requests](https://pypi.org/project/requests/)                             | >= 2.32.3    | HTTP リクエストライブラリ            |
 
 ## 開発用ライブラリ
 
