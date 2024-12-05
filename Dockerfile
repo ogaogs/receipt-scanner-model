@@ -1,5 +1,5 @@
 ARG PYTHON_VERSION
-FROM python:${PYTHON_VERSION}
+FROM python:${PYTHON_VERSION}-slim-bookworm
 
 RUN apt-get update \
     && apt-get install -y software-properties-common \
@@ -11,11 +11,7 @@ RUN apt-get update \
     tesseract-ocr-jpn \
     tesseract-ocr-script-jpan
 
-RUN pip install uv \
-    && apt-get -y install \
-    libopencv-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN pip install uv
 
 WORKDIR /app
 COPY ./pyproject.toml ./pyproject.toml
