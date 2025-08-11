@@ -1,6 +1,6 @@
 import requests
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from src.receipt_scanner_model import scan_receipt, analyze
+from fastapi import FastAPI, HTTPException
+from src.receipt_scanner_model import analyze
 import tomllib
 from pydantic import BaseModel
 
@@ -32,15 +32,6 @@ async def root():
     APIのバージョンを返す
     """
     return {"version": app.version}
-
-
-@app.post("/scan-receipt")
-async def total_scan_receipt(file: UploadFile = File(...)):
-    """
-    レシートの合計を返す
-    """
-    total = scan_receipt.scan(file.file.read())["amount"]
-    return {"total": total}
 
 
 @app.post("/receipt-analyze")
