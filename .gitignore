@@ -22,3 +22,6 @@ output/
 
 ## env
 .env
+
+## logs
+logs/
