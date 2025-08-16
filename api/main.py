@@ -1,29 +1,25 @@
-import requests
 from fastapi import FastAPI, HTTPException
-from src.receipt_scanner_model import analyze
+from src.receipt_scanner_model.analyze import ReceiptDetail, get_receipt_detail
+from src.receipt_scanner_model.s3_client import S3Client
 import tomllib
 from pydantic import BaseModel
+from src.receipt_scanner_model.error import (
+    S3BadRequest,
+    S3NotFound,
+    S3Forbidden,
+    S3ServiceUnavailable,
+    S3InternalServiceError,
+)
 
 with open("pyproject.toml", "rb") as f:
     data = tomllib.load(f)
     version = data["project"]["version"]
 
-
-class PreSignedURL(BaseModel):
-    pre_signed_url: str
-
-
-class Error(BaseModel):
-    code: int
-    message: str
-
-
-class ReceiptAnalyzationResponse(BaseModel):
-    receipt_detail: analyze.ReceiptDetail | None
-    error: Error | None
-
-
 app = FastAPI(version=version)
+
+
+class FileName(BaseModel):
+    filename: str
 
 
 @app.get("/")
@@ -35,33 +31,42 @@ async def root():
 
 
 @app.post("/receipt-analyze")
-async def receipt_analyze(request: PreSignedURL) -> ReceiptAnalyzationResponse:
-    """pre_signed_urlからレシートを解析し、ReceiptDetailを返す。
+async def receipt_analyze(request: FileName) -> ReceiptDetail:
+    """S3のファイル名からレシートを解析し、ReceiptDetailを返す
 
     Args:
-        request (PreSignedURL): ダウンロード用のpre_signed_url
+        request (FileName): ファイル名
 
     Returns:
-        ReceiptAnalyzationResponse: レシートの解析結果とERROR
+        ReceiptDetail: 解析したレシート詳細
     """
     try:
-        # S3のpre_signed_urlから画像を取得
-        response = requests.get(request.pre_signed_url)
-        response.raise_for_status()
-        image_bytes = response.content  # バイトデータを取得
+        # S3Clientを初期化
+        s3_client = S3Client()
 
-        # 画像データを解析
-        receipt_detail = analyze.get_receipt_detail(image_bytes)
+        # S3からファイル名を指定して画像をダウンロード
+        image_bytes = s3_client.download_image_by_filename(request.filename)
 
-        return ReceiptAnalyzationResponse(receipt_detail=receipt_detail, error=None)
-
-    except requests.exceptions.RequestException as e:
-        # pre_signed_urlからの画像取得に失敗した場合
-        return ReceiptAnalyzationResponse(
-            receipt_detail=None,
-            error=Error(code=400, message=f"Failed to download image: {e}"),
+        receipt_detail = get_receipt_detail(image_bytes)
+        return receipt_detail
+    except (S3BadRequest, S3NotFound):
+        raise HTTPException(
+            status_code=400,
+            detail="レシート解析中にエラーが起きました。再度レシートをアップロードしてください。",
         )
-
+    except S3ServiceUnavailable:
+        raise HTTPException(
+            status_code=503,
+            detail="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。",
+        )
+    except (S3Forbidden, S3InternalServiceError):
+        raise HTTPException(
+            status_code=500,
+            detail="レシート解析中にエラーが起きました。開発者にお問い合わせください。",
+        )
     except Exception as e:
-        # その他のエラー
-        raise HTTPException(status_code=500, detail=f"Error analyzing receipt: {e}")
+        print(f"レシート解析中にエラーが起きました: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="レシート解析中にエラーが起きました。開発者にお問い合わせください。",
+        )
