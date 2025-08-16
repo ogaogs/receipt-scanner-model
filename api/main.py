@@ -37,7 +37,6 @@ def handle_receipt_exception(e: Exception, filename: str | None):
     Returns:
         HTTPException: 適切なステータスコードとメッセージを持つHTTPException
     """
-    logger = logging.getLogger(__name__)
     logger.exception(f"レシート解析中にエラーが起きました。ファイル名: {filename}")
 
     if isinstance(e, (S3BadRequest, S3NotFound)):
