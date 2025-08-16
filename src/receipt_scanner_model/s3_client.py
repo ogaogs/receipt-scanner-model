@@ -2,6 +2,7 @@
 
 import boto3
 import io
+import logging
 from src.receipt_scanner_model.setting import setting
 from botocore.exceptions import ClientError
 from src.receipt_scanner_model.error import (
@@ -11,6 +12,8 @@ from src.receipt_scanner_model.error import (
     S3ServiceUnavailable,
     S3InternalServiceError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class S3Client:
@@ -56,33 +59,47 @@ class S3Client:
             )
 
             if http_status_code == 400:
-                print(f"{http_status_code}: {error_message}")
+                logger.error(
+                    f"ダウンロード中にエラーが起きました: {http_status_code} {error_message}"
+                )
                 raise S3BadRequest(
                     http_status_code,
                     f"ダウンロード中にエラーが起きました: {error_message}",
                 )
             elif http_status_code == 404:
-                print(f"{http_status_code}: {error_message}")
+                logger.error(
+                    f"ダウンロード中にエラーが起きました: {http_status_code} {error_message}"
+                )
                 raise S3NotFound(
                     http_status_code,
                     f"ダウンロード中にエラーが起きました: {error_message}",
                 )
             elif http_status_code == 403:
+                logger.error(
+                    f"アクセスが拒否されました: {http_status_code} {error_message}"
+                )
                 raise S3Forbidden(
                     http_status_code,
                     f"アクセスが拒否されました: {error_message}",
                 )
             elif http_status_code == 503:
+                logger.error(
+                    f"ダウンロード中に予期しないエラーが発生しました: {http_status_code} {error_message}"
+                )
                 raise S3ServiceUnavailable(
                     http_status_code,
                     f"ダウンロード中に予期しないエラーが発生しました: {error_message}",
                 )
             else:
+                logger.error(
+                    f"ダウンロード中に予期しないエラーが発生しました: {http_status_code} {error_message}"
+                )
                 raise S3InternalServiceError(
                     http_status_code,
                     f"ダウンロード中に予期しないエラーが発生しました: {error_message}",
                 )
         except Exception as e:
+            logger.error(f"ダウンロード中に予期しないエラーが発生しました: {e}")
             raise S3InternalServiceError(
                 500, f"ダウンロード中に予期しないエラーが発生しました: {e}"
             )

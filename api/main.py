@@ -1,7 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from src.receipt_scanner_model.analyze import ReceiptDetail, get_receipt_detail
 from src.receipt_scanner_model.s3_client import S3Client
+from src.receipt_scanner_model.logger_config import set_logger
 import tomllib
+import logging
 from pydantic import BaseModel
 from src.receipt_scanner_model.error import (
     S3BadRequest,
@@ -10,6 +12,10 @@ from src.receipt_scanner_model.error import (
     S3ServiceUnavailable,
     S3InternalServiceError,
 )
+
+# ログ設定を初期化
+set_logger()
+logger = logging.getLogger(__name__)
 
 with open("pyproject.toml", "rb") as f:
     data = tomllib.load(f)
@@ -22,6 +28,40 @@ class FileName(BaseModel):
     filename: str
 
 
+def handle_receipt_exception(e: Exception, filename: str | None):
+    """例外を分類してHTTPExceptionに変換する
+
+    Args:
+        e: キャッチされた例外
+
+    Returns:
+        HTTPException: 適切なステータスコードとメッセージを持つHTTPException
+    """
+    logger = logging.getLogger(__name__)
+    logger.exception(f"レシート解析中にエラーが起きました。ファイル名: {filename}")
+
+    if isinstance(e, (S3BadRequest, S3NotFound)):
+        return HTTPException(
+            status_code=400,
+            detail="レシート解析中にエラーが起きました。再度レシートをアップロードしてください。",
+        )
+    elif isinstance(e, S3ServiceUnavailable):
+        return HTTPException(
+            status_code=503,
+            detail="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。",
+        )
+    elif isinstance(e, (S3Forbidden, S3InternalServiceError)):
+        return HTTPException(
+            status_code=500,
+            detail="レシート解析中にエラーが起きました。開発者にお問い合わせください。",
+        )
+    else:
+        return HTTPException(
+            status_code=500,
+            detail="レシート解析中にエラーが起きました。開発者にお問い合わせください。",
+        )
+
+
 @app.get("/")
 async def root():
     """
@@ -31,7 +71,7 @@ async def root():
 
 
 @app.post("/receipt-analyze")
-async def receipt_analyze(request: FileName) -> ReceiptDetail:
+def receipt_analyze(request: FileName) -> ReceiptDetail:
     """S3のファイル名からレシートを解析し、ReceiptDetailを返す
 
     Args:
@@ -40,7 +80,9 @@ async def receipt_analyze(request: FileName) -> ReceiptDetail:
     Returns:
         ReceiptDetail: 解析したレシート詳細
     """
+    filename = None
     try:
+        filename = request.filename
         # S3Clientを初期化
         s3_client = S3Client()
 
@@ -49,24 +91,5 @@ async def receipt_analyze(request: FileName) -> ReceiptDetail:
 
         receipt_detail = get_receipt_detail(image_bytes)
         return receipt_detail
-    except (S3BadRequest, S3NotFound):
-        raise HTTPException(
-            status_code=400,
-            detail="レシート解析中にエラーが起きました。再度レシートをアップロードしてください。",
-        )
-    except S3ServiceUnavailable:
-        raise HTTPException(
-            status_code=503,
-            detail="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。",
-        )
-    except (S3Forbidden, S3InternalServiceError):
-        raise HTTPException(
-            status_code=500,
-            detail="レシート解析中にエラーが起きました。開発者にお問い合わせください。",
-        )
     except Exception as e:
-        print(f"レシート解析中にエラーが起きました: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="レシート解析中にエラーが起きました。開発者にお問い合わせください。",
-        )
+        raise handle_receipt_exception(e, filename)
