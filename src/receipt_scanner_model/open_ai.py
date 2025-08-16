@@ -1,3 +1,4 @@
+from src.receipt_scanner_model.setting import setting
 from pydantic import BaseModel
 from openai import OpenAI
 from openai.types.chat import (
@@ -19,7 +20,7 @@ class GPTResult(TypedDict):
     content: str | ReceiptExtraction | None
 
 
-client = OpenAI()
+client = OpenAI(api_key=setting.openai_api_key)
 
 MODEL = "gpt-4o-mini"
 TEMPERATURE = 1
