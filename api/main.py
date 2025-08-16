@@ -28,7 +28,7 @@ class FileName(BaseModel):
     filename: str
 
 
-def handle_receipt_exception(e: Exception):
+def handle_receipt_exception(e: Exception, filename: str | None):
     """例外を分類してHTTPExceptionに変換する
 
     Args:
@@ -38,7 +38,7 @@ def handle_receipt_exception(e: Exception):
         HTTPException: 適切なステータスコードとメッセージを持つHTTPException
     """
     logger = logging.getLogger(__name__)
-    logger.exception("レシート解析中にエラーが起きました。")
+    logger.exception(f"レシート解析中にエラーが起きました。ファイル名: {filename}")
 
     if isinstance(e, (S3BadRequest, S3NotFound)):
         return HTTPException(
@@ -80,7 +80,9 @@ def receipt_analyze(request: FileName) -> ReceiptDetail:
     Returns:
         ReceiptDetail: 解析したレシート詳細
     """
+    filename = None
     try:
+        filename = request.filename
         # S3Clientを初期化
         s3_client = S3Client()
 
@@ -90,4 +92,4 @@ def receipt_analyze(request: FileName) -> ReceiptDetail:
         receipt_detail = get_receipt_detail(image_bytes)
         return receipt_detail
     except Exception as e:
-        raise handle_receipt_exception(e)
+        raise handle_receipt_exception(e, filename)
