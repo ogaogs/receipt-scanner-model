@@ -66,13 +66,17 @@ pillow==10.4.0
 pydantic==2.9.0
     # via fastapi
     # via openai
+    # via pydantic-settings
 pydantic-core==2.23.2
     # via pydantic
+pydantic-settings==2.10.1
+    # via receipt-scanner-model
 pytesseract==0.3.13
     # via receipt-scanner-model
 python-dateutil==2.9.0.post0
     # via botocore
 python-dotenv==1.0.1
+    # via pydantic-settings
     # via uvicorn
 python-multipart==0.0.9
     # via receipt-scanner-model
@@ -97,6 +101,9 @@ typing-extensions==4.12.2
     # via openai
     # via pydantic
     # via pydantic-core
+    # via typing-inspection
+typing-inspection==0.4.1
+    # via pydantic-settings
 tzdata==2024.1
     # via pydantic
 urllib3==2.2.3

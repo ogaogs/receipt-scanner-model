@@ -19,3 +19,6 @@ wheels/
 
 ## images dir
 output/
+
+## env
+.env
