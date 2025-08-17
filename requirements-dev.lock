@@ -32,6 +32,8 @@ charset-normalizer==3.4.0
     # via requests
 click==8.1.7
     # via uvicorn
+coverage==7.10.4
+    # via receipt-scanner-model
 distlib==0.3.8
     # via virtualenv
 distro==1.9.0
@@ -94,6 +96,9 @@ pyright==1.1.378
 pytesseract==0.3.13
     # via receipt-scanner-model
 pytest==8.3.2
+    # via pytest-mock
+pytest-mock==3.14.1
+    # via receipt-scanner-model
 python-dateutil==2.9.0.post0
     # via botocore
 python-dotenv==1.0.1
