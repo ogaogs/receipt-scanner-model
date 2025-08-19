@@ -207,3 +207,58 @@ class TestS3Error:
             response.json()["detail"]
             == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
         )
+
+
+class TestInternalServerErrors:
+    """
+    内部サーバーエラーと予期しない例外
+    """
+
+    def test_unexpected_exception(self, mocker: MockFixture):
+        """画像ダウンロード中の予期せぬ例外"""
+        mocker.patch.object(
+            S3Client,
+            "download_image_by_filename",
+            side_effect=ValueError("unexpected error"),
+        )
+
+        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+
+        assert response.status_code == 500
+        assert (
+            response.json()["detail"]
+            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+        )
+
+    def test_s3_client_initialization_failure(self, mocker: MockFixture):
+        """S3Client初期化失敗"""
+        mocker.patch(
+            "api.main.S3Client", side_effect=AttributeError("S3Client init failed")
+        )
+
+        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+
+        assert response.status_code == 500
+        assert (
+            response.json()["detail"]
+            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+        )
+
+    def test_get_receipt_detail_failure(self, mocker: MockFixture):
+        # FIXME get_receipt_detailのエラーハンドリングを整備後に詳細なテストが必要。
+        """get_receipt_detail関数でのエラー"""
+        mocker.patch.object(
+            S3Client, "download_image_by_filename", return_value=b"mock_image_bytes"
+        )
+        mocker.patch(
+            "api.main.get_receipt_detail",
+            side_effect=RuntimeError("Receipt analysis failed"),
+        )
+
+        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+
+        assert response.status_code == 500
+        assert (
+            response.json()["detail"]
+            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+        )
