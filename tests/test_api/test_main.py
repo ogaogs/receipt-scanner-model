@@ -16,15 +16,11 @@ def test_root():
 
 
 def test_receipt_analyze_success(mocker: MockFixture):
-    """
-    レシート解析が成功する場合のテスト
-    """
-    # S3Clientのdownload_image_by_filenameメソッドをモック
+    """正常なレシート解析処理"""
     mock_s3_client = mocker.patch.object(
         S3Client, "download_image_by_filename", return_value=b"mock_image_bytes"
     )
 
-    # get_receipt_detail関数をモック
     mock_get_receipt_detail = mocker.patch(
         "api.main.get_receipt_detail",
         return_value={
@@ -35,10 +31,8 @@ def test_receipt_analyze_success(mocker: MockFixture):
         },
     )
 
-    # APIリクエスト
     response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
 
-    # レスポンスの検証
     assert response.status_code == 200
     assert response.json() == {
         "store_name": "テストストア",
@@ -47,6 +41,30 @@ def test_receipt_analyze_success(mocker: MockFixture):
         "category": "食費",
     }
 
-    # モック関数が正しく呼び出されたことを確認
     mock_s3_client.assert_called_once_with("test.jpg")
     mock_get_receipt_detail.assert_called_once_with(b"mock_image_bytes")
+
+
+def test_receipt_analyze_with_extra_fields(mocker: MockFixture):
+    # NOTE: 現在は正常系としているが、422にする可能性あり。
+    """余分なフィールドがあっても正常処理されること"""
+    mock_s3_client = mocker.patch.object(
+        S3Client, "download_image_by_filename", return_value=b"mock_image_bytes"
+    )
+    mocker.patch(
+        "api.main.get_receipt_detail",
+        return_value={
+            "store_name": "Store",
+            "amount": 100,
+            "date": "2024/01/01",
+            "category": "食費",
+        },
+    )
+
+    response = client.post(
+        "/receipt-analyze",
+        json={"filename": "test.jpg", "extra_field": "ignored", "another_field": 123},
+    )
+
+    assert response.status_code == 200
+    mock_s3_client.assert_called_once_with("test.jpg")
