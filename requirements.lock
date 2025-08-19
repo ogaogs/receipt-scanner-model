@@ -30,6 +30,8 @@ charset-normalizer==3.4.0
     # via requests
 click==8.1.7
     # via uvicorn
+coverage==7.10.4
+    # via receipt-scanner-model
 distro==1.9.0
     # via openai
 fastapi==0.114.0
@@ -47,6 +49,8 @@ idna==3.8
     # via anyio
     # via httpx
     # via requests
+iniconfig==2.1.0
+    # via pytest
 jiter==0.6.1
     # via openai
 jmespath==1.0.1
@@ -60,9 +64,12 @@ opencv-python-headless==4.10.0.84
     # via receipt-scanner-model
 packaging==24.1
     # via pytesseract
+    # via pytest
 pillow==10.4.0
     # via pytesseract
     # via receipt-scanner-model
+pluggy==1.6.0
+    # via pytest
 pydantic==2.9.0
     # via fastapi
     # via openai
@@ -71,7 +78,13 @@ pydantic-core==2.23.2
     # via pydantic
 pydantic-settings==2.10.1
     # via receipt-scanner-model
+pygments==2.19.2
+    # via pytest
 pytesseract==0.3.13
+    # via receipt-scanner-model
+pytest==8.4.1
+    # via pytest-mock
+pytest-mock==3.14.1
     # via receipt-scanner-model
 python-dateutil==2.9.0.post0
     # via botocore

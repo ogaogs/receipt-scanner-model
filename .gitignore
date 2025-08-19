@@ -25,3 +25,6 @@ output/
 
 ## logs
 logs/
+
+# coverage reports
+.coverage
