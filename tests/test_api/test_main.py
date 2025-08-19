@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 from pytest_mock import MockFixture
+import pytest
 
 from api.main import app, S3Client
 
@@ -68,3 +69,48 @@ def test_receipt_analyze_with_extra_fields(mocker: MockFixture):
 
     assert response.status_code == 200
     mock_s3_client.assert_called_once_with("test.jpg")
+
+
+class TestInputValidation:
+    """
+    リクエスト形式に関するテスト
+    """
+
+    def test_missing_filename_field(self):
+        """filenameフィールドが欠落"""
+        response = client.post("/receipt-analyze", json={})
+        assert response.status_code == 422
+
+    def test_empty_filename(self):
+        """filenameが空文字列"""
+        response = client.post("/receipt-analyze", json={"filename": ""})
+        assert response.status_code == 422
+
+    def test_null_filename(self):
+        """filenameがnull"""
+        response = client.post("/receipt-analyze", json={"filename": None})
+        assert response.status_code == 422
+
+    @pytest.mark.parametrize("invalid_filename", [123, [], {}, True, ["test.jpg"]])
+    def test_invalid_filename_type(self, invalid_filename):
+        """filenameが文字列以外"""
+        response = client.post("/receipt-analyze", json={"filename": invalid_filename})
+        assert response.status_code == 422
+
+    def test_invalid_json_format(self):
+        """不正なJSONフォーマット"""
+        response = client.post(
+            "/receipt-analyze",
+            data="{filename: test.jpg}",  # type: ignore
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status_code == 422
+
+    def test_invalid_content_type(self):
+        """Content-Typeが不正"""
+        response = client.post(
+            "/receipt-analyze",
+            json={"filename": "test.jpg"},
+            headers={"Content-Type": "text/plain"},
+        )
+        assert response.status_code == 422
