@@ -3,6 +3,13 @@ from pytest_mock import MockFixture
 import pytest
 
 from api.main import app, S3Client
+from src.receipt_scanner_model.error import (
+    S3BadRequest,
+    S3NotFound,
+    S3Forbidden,
+    S3ServiceUnavailable,
+    S3InternalServiceError,
+)
 
 client = TestClient(app)
 
@@ -114,3 +121,89 @@ class TestInputValidation:
             headers={"Content-Type": "text/plain"},
         )
         assert response.status_code == 422
+
+
+class TestS3Error:
+    """
+    S3関連のエラーに関するテスト
+    """
+
+    def test_s3_bad_request_exception(self, mocker: MockFixture):
+        """S3BadRequest例外"""
+        mocker.patch.object(
+            S3Client,
+            "download_image_by_filename",
+            side_effect=S3BadRequest(400, "Bad request"),
+        )
+
+        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+
+        assert response.status_code == 400
+        assert (
+            response.json()["detail"]
+            == "レシート解析中にエラーが起きました。再度レシートをアップロードしてください。"
+        )
+
+    def test_s3_not_found_exception(self, mocker: MockFixture):
+        """S3NotFound例外"""
+        mocker.patch.object(
+            S3Client,
+            "download_image_by_filename",
+            side_effect=S3NotFound(404, "Not found"),
+        )
+
+        response = client.post("/receipt-analyze", json={"filename": "not_exists.jpg"})
+
+        assert response.status_code == 400
+        assert (
+            response.json()["detail"]
+            == "レシート解析中にエラーが起きました。再度レシートをアップロードしてください。"
+        )
+
+    def test_s3_service_unavailable_exception(self, mocker: MockFixture):
+        """S3ServiceUnavailable例外"""
+        mocker.patch.object(
+            S3Client,
+            "download_image_by_filename",
+            side_effect=S3ServiceUnavailable(503, "Service unavailable"),
+        )
+
+        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+
+        assert response.status_code == 503
+        assert (
+            response.json()["detail"]
+            == "レシート解析中にエラーが起きました。しばらくしてから再度お試しください。"
+        )
+
+    def test_s3_forbidden_exception(self, mocker: MockFixture):
+        """S3Forbidden例外（権限不足）"""
+        mocker.patch.object(
+            S3Client,
+            "download_image_by_filename",
+            side_effect=S3Forbidden(403, "Forbidden"),
+        )
+
+        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+
+        assert response.status_code == 500
+        assert (
+            response.json()["detail"]
+            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+        )
+
+    def test_s3_internal_service_error_exception(self, mocker: MockFixture):
+        """S3InternalServiceError例外"""
+        mocker.patch.object(
+            S3Client,
+            "download_image_by_filename",
+            side_effect=S3InternalServiceError(500, "Internal error"),
+        )
+
+        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+
+        assert response.status_code == 500
+        assert (
+            response.json()["detail"]
+            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+        )
