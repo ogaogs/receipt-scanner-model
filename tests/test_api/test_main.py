@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 from pytest_mock import MockFixture
 import pytest
 
-from api.main import app, S3Client
+from api.main import app, S3Client, handle_receipt_exception
 from src.receipt_scanner_model.error import (
     S3BadRequest,
     S3NotFound,
@@ -260,5 +260,88 @@ class TestInternalServerErrors:
         assert response.status_code == 500
         assert (
             response.json()["detail"]
+            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+        )
+
+
+class TestHandleReceiptException:
+    """
+    handle_receipt_exception関数の単体テスト
+    """
+
+    def test_handle_s3_bad_request(self):
+        """S3BadRequest例外の処理"""
+        exception = S3BadRequest(400, "Bad request")
+        result = handle_receipt_exception(exception, "test.jpg")
+
+        assert result.status_code == 400
+        assert (
+            result.detail
+            == "レシート解析中にエラーが起きました。再度レシートをアップロードしてください。"
+        )
+
+    def test_handle_s3_not_found(self):
+        """S3NotFound例外の処理"""
+        exception = S3NotFound(404, "Not found")
+        result = handle_receipt_exception(exception, "test.jpg")
+
+        assert result.status_code == 400
+        assert (
+            result.detail
+            == "レシート解析中にエラーが起きました。再度レシートをアップロードしてください。"
+        )
+
+    def test_handle_s3_service_unavailable(self):
+        """S3ServiceUnavailable例外の処理"""
+        exception = S3ServiceUnavailable(503, "Service unavailable")
+        result = handle_receipt_exception(exception, "test.jpg")
+
+        assert result.status_code == 503
+        assert (
+            result.detail
+            == "レシート解析中にエラーが起きました。しばらくしてから再度お試しください。"
+        )
+
+    def test_handle_s3_forbidden(self):
+        """S3Forbidden例外の処理"""
+        exception = S3Forbidden(403, "Forbidden")
+        result = handle_receipt_exception(exception, "test.jpg")
+
+        assert result.status_code == 500
+        assert (
+            result.detail
+            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+        )
+
+    def test_handle_s3_internal_service_error(self):
+        """S3InternalServiceError例外の処理"""
+        exception = S3InternalServiceError(500, "Internal error")
+        result = handle_receipt_exception(exception, "test.jpg")
+
+        assert result.status_code == 500
+        assert (
+            result.detail
+            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+        )
+
+    def test_handle_unknown_exception(self):
+        """予期せぬ例外の処理"""
+        exception = ValueError("Unknown error")
+        result = handle_receipt_exception(exception, "test.jpg")
+
+        assert result.status_code == 500
+        assert (
+            result.detail
+            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+        )
+
+    def test_handle_exception_with_none_filename(self):
+        """filename引数がNoneの場合"""
+        exception = ValueError("Unknown error")
+        result = handle_receipt_exception(exception, None)
+
+        assert result.status_code == 500
+        assert (
+            result.detail
             == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
         )
