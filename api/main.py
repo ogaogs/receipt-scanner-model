@@ -4,7 +4,7 @@ from src.receipt_scanner_model.s3_client import S3Client
 from src.receipt_scanner_model.logger_config import set_logger
 import tomllib
 import logging
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from src.receipt_scanner_model.error import (
     S3BadRequest,
     S3NotFound,
@@ -26,6 +26,13 @@ app = FastAPI(version=version)
 
 class FileName(BaseModel):
     filename: str
+
+    @field_validator("filename", mode="after")
+    @classmethod
+    def validate_filename(cls, value: str):
+        if not value or not value.strip():
+            raise ValueError("ファイル名は空文字にはできません。")
+        return value
 
 
 def handle_receipt_exception(e: Exception, filename: str | None):
@@ -86,7 +93,7 @@ def receipt_analyze(request: FileName) -> ReceiptDetail:
         s3_client = S3Client()
 
         # S3からファイル名を指定して画像をダウンロード
-        image_bytes = s3_client.download_image_by_filename(request.filename)
+        image_bytes = s3_client.download_image_by_filename(filename)
 
         receipt_detail = get_receipt_detail(image_bytes)
         return receipt_detail
