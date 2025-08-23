@@ -59,22 +59,22 @@ def handle_receipt_exception(e: Exception, filename: str | None):
 
     if isinstance(e, (S3BadRequest, S3NotFound)):
         return HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="レシート解析中にエラーが起きました。再度レシートをアップロードしてください。",
         )
     elif isinstance(e, S3ServiceUnavailable):
         return HTTPException(
-            status_code=503,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。",
         )
     elif isinstance(e, (S3Forbidden, S3InternalServiceError)):
         return HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="レシート解析中にエラーが起きました。開発者にお問い合わせください。",
         )
     else:
         return HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="レシート解析中にエラーが起きました。開発者にお問い合わせください。",
         )
 
