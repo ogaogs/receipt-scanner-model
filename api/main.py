@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
+from fastapi.exceptions import RequestValidationError
 from src.receipt_scanner_model.analyze import ReceiptDetail, get_receipt_detail
 from src.receipt_scanner_model.s3_client import S3Client
 from src.receipt_scanner_model.logger_config import set_logger
@@ -22,6 +23,16 @@ with open("pyproject.toml", "rb") as f:
     version = data["project"]["version"]
 
 app = FastAPI(version=version)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc: RequestValidationError):
+    """RequestValidationErrorをHTTPExceptionの形に変換する"""
+    logger.exception("レシート解析中にエラーが起きました。")
+    return HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="レシート解析中にエラーが起きました。再度レシートをアップロードしてください。",
+    )
 
 
 class FileName(BaseModel):
