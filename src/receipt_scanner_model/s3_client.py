@@ -10,7 +10,8 @@ from src.receipt_scanner_model.error import (
     S3NotFound,
     S3Forbidden,
     S3ServiceUnavailable,
-    S3InternalServiceError,
+    S3InternalServerError,
+    S3UnexpectedError,
 )
 
 logger = logging.getLogger(__name__)
@@ -90,17 +91,25 @@ class S3Client:
                     http_status_code,
                     f"ダウンロード中に予期しないエラーが発生しました: {error_message}",
                 )
+            elif http_status_code == 500:
+                logger.error(
+                    f"ダウンロード中に予期しないエラーが発生しました: {http_status_code} {error_message}"
+                )
+                raise S3InternalServerError(
+                    http_status_code,
+                    f"ダウンロード中に予期しないエラーが発生しました: {error_message}",
+                )
             else:
                 logger.error(
                     f"ダウンロード中に予期しないエラーが発生しました: {http_status_code} {error_message}"
                 )
-                raise S3InternalServiceError(
+                raise S3UnexpectedError(
                     http_status_code,
                     f"ダウンロード中に予期しないエラーが発生しました: {error_message}",
                 )
         except Exception as e:
             logger.error(f"ダウンロード中に予期しないエラーが発生しました: {e}")
-            raise S3InternalServiceError(
+            raise S3UnexpectedError(
                 500, f"ダウンロード中に予期しないエラーが発生しました: {e}"
             )
 
