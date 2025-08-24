@@ -46,6 +46,9 @@ class FileName(BaseModel):
             validate_filename(value)
             return value
         except ValidationError as e:
+            logger.error(
+                f"無効なファイル名でエラーが発生しました。: {value}, reason: {str(e)}"
+            )
             raise ValueError("無効なファイル名です。") from e
 
 
