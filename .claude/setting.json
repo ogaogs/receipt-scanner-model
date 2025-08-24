@@ -25,7 +25,11 @@
       "Bash(psql:*)",
       "Bash(mysql:*)",
       "Bash(mongod:*)",
-      "mcp__supabase__execute_sql"
+      "mcp__supabase__execute_sql",
+      "Bash(docker:*)",
+      "Bash(systemctl:*)",
+      "Bash(chmod:*)",
+      "Write(**/config/**)"
     ]
   }
 }
