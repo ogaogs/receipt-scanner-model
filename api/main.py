@@ -11,7 +11,7 @@ from src.receipt_scanner_model.error import (
     S3NotFound,
     S3Forbidden,
     S3ServiceUnavailable,
-    S3InternalServiceError,
+    S3InternalServerError,
 )
 from pathvalidate import ValidationError, validate_filename
 
@@ -73,15 +73,20 @@ def handle_receipt_exception(e: Exception, filename: str | None):
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。",
         )
-    elif isinstance(e, (S3Forbidden, S3InternalServiceError)):
+    elif isinstance(e, S3InternalServerError):
         return HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="レシート解析中にエラーが起きました。開発者にお問い合わせください。",
+            detail="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。",
         )
-    else:
+    elif isinstance(e, S3Forbidden):
         return HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="レシート解析中にエラーが起きました。開発者にお問い合わせください。",
+            detail="レシート解析中にエラーが起きました。サポートまでお問い合わせください",
+        )
+    else:  # S3UnexpectedError とその他のエラー
+        return HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。問題が継続する場合は、サポートまでお問い合わせください",
         )
 
 

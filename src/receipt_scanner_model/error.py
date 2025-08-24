@@ -22,5 +22,9 @@ class S3ServiceUnavailable(ErrorResponse):
     pass
 
 
-class S3InternalServiceError(ErrorResponse):
+class S3InternalServerError(ErrorResponse):
+    pass
+
+
+class S3UnexpectedError(ErrorResponse):
     pass
