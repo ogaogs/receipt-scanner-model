@@ -1,7 +1,6 @@
 """S3からの画像ダウンロード処理を担当するクライアント"""
 
 import boto3
-import io
 import logging
 from src.receipt_scanner_model.setting import setting
 from botocore.exceptions import ClientError
@@ -39,19 +38,9 @@ class S3Client:
         Returns:
             bytes: ダウンロードした画像
         """
-        file_obj = None
         try:
-            # メモリ上にファイルオブジェクトを作成
-            file_obj = io.BytesIO()
-
-            # S3からファイルをダウンロード
-            self.s3_client.download_fileobj(self.bucket_name, filename, file_obj)
-
-            # バイナリデータを取得
-            file_obj.seek(0)
-            image_bytes = file_obj.getvalue()
-
-            return image_bytes
+            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=filename)
+            return response["Body"].read()
 
         except ClientError as e:
             error_message = e.response["Error"]["Message"]
@@ -112,8 +101,3 @@ class S3Client:
             raise S3UnexpectedError(
                 500, f"ダウンロード中に予期しないエラーが発生しました: {e}"
             )
-
-        finally:
-            # ファイルオブジェクトをクリーンアップ
-            if "file_obj" in locals() and file_obj:
-                file_obj.close()
