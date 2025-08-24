@@ -29,7 +29,7 @@ app = FastAPI(version=version)
 async def validation_exception_handler(request, exc: RequestValidationError):
     """RequestValidationErrorをHTTPExceptionの形に変換する"""
     logger.exception("レシート解析中にエラーが起きました。")
-    return HTTPException(
+    raise HTTPException(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         detail="レシート解析中にエラーが起きました。再度レシートをアップロードしてください。",
     )
