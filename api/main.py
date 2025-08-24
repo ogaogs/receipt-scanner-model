@@ -13,6 +13,7 @@ from src.receipt_scanner_model.error import (
     S3ServiceUnavailable,
     S3InternalServiceError,
 )
+from pathvalidate import ValidationError, validate_filename
 
 # ログ設定を初期化
 set_logger()
@@ -38,12 +39,14 @@ async def validation_exception_handler(request, exc: RequestValidationError):
 class FileName(BaseModel):
     filename: str
 
-    @field_validator("filename", mode="after")
+    @field_validator("filename")
     @classmethod
-    def validate_filename(cls, value: str):
-        if not value or not value.strip():
-            raise ValueError("ファイル名は空文字にはできません。")
-        return value
+    def validate_filename(cls, value: str) -> str:
+        try:
+            validate_filename(value)
+            return value
+        except ValidationError as e:
+            raise ValueError("無効なファイル名です。") from e
 
 
 def handle_receipt_exception(e: Exception, filename: str | None):
