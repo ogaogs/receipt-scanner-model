@@ -76,6 +76,8 @@ opencv-python-headless==4.10.0.84
 packaging==24.1
     # via pytesseract
     # via pytest
+pathvalidate==3.3.1
+    # via receipt-scanner-model
 pillow==10.4.0
     # via pytesseract
     # via receipt-scanner-model
