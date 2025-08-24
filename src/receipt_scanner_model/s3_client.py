@@ -29,7 +29,9 @@ class S3Client:
             aws_secret_access_key=setting.aws_secret_access_key,
         )
 
-    def download_image_by_filename(self, filename: str) -> bytes:
+    def download_image_by_filename(
+        self, filename: str, max_size: int = 5 * 1024 * 1024
+    ) -> bytes:
         """S3からファイル名を指定して画像をダウンロードする
 
         Args:
@@ -39,6 +41,21 @@ class S3Client:
             bytes: ダウンロードした画像
         """
         try:
+            # まずheadでファイルサイズを確認
+            head_response = self.s3_client.head_object(
+                Bucket=self.bucket_name, Key=filename
+            )
+            content_length = head_response.get("ContentLength", 0)
+
+            if content_length > max_size:
+                logger.error(
+                    f"ファイルサイズが制限を超えています: {content_length} bytes"
+                )
+                raise S3BadRequest(
+                    400, f"ファイルサイズが制限を超えています: {content_length} bytes"
+                )
+
+            # サイズが問題なければダウンロード
             response = self.s3_client.get_object(Bucket=self.bucket_name, Key=filename)
             return response["Body"].read()
 
