@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
+from fastapi.exceptions import RequestValidationError
 from src.receipt_scanner_model.analyze import ReceiptDetail, get_receipt_detail
 from src.receipt_scanner_model.s3_client import S3Client
 from src.receipt_scanner_model.logger_config import set_logger
 import tomllib
 import logging
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from src.receipt_scanner_model.error import (
     S3BadRequest,
     S3NotFound,
@@ -12,6 +13,7 @@ from src.receipt_scanner_model.error import (
     S3ServiceUnavailable,
     S3InternalServiceError,
 )
+from pathvalidate import ValidationError, validate_filename
 
 # ログ設定を初期化
 set_logger()
@@ -24,8 +26,30 @@ with open("pyproject.toml", "rb") as f:
 app = FastAPI(version=version)
 
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc: RequestValidationError):
+    """RequestValidationErrorをHTTPExceptionの形に変換する"""
+    logger.exception("レシート解析中にエラーが起きました。")
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="レシート解析中にエラーが起きました。再度レシートをアップロードしてください。",
+    )
+
+
 class FileName(BaseModel):
     filename: str
+
+    @field_validator("filename")
+    @classmethod
+    def validate_filename(cls, value: str) -> str:
+        try:
+            validate_filename(value)
+            return value
+        except ValidationError as e:
+            logger.error(
+                f"無効なファイル名でエラーが発生しました。: {value}, reason: {str(e)}"
+            )
+            raise ValueError("無効なファイル名です。") from e
 
 
 def handle_receipt_exception(e: Exception, filename: str | None):
@@ -41,22 +65,22 @@ def handle_receipt_exception(e: Exception, filename: str | None):
 
     if isinstance(e, (S3BadRequest, S3NotFound)):
         return HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="レシート解析中にエラーが起きました。再度レシートをアップロードしてください。",
         )
     elif isinstance(e, S3ServiceUnavailable):
         return HTTPException(
-            status_code=503,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。",
         )
     elif isinstance(e, (S3Forbidden, S3InternalServiceError)):
         return HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="レシート解析中にエラーが起きました。開発者にお問い合わせください。",
         )
     else:
         return HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="レシート解析中にエラーが起きました。開発者にお問い合わせください。",
         )
 
@@ -86,7 +110,7 @@ def receipt_analyze(request: FileName) -> ReceiptDetail:
         s3_client = S3Client()
 
         # S3からファイル名を指定して画像をダウンロード
-        image_bytes = s3_client.download_image_by_filename(request.filename)
+        image_bytes = s3_client.download_image_by_filename(filename)
 
         receipt_detail = get_receipt_detail(image_bytes)
         return receipt_detail
