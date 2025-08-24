@@ -113,6 +113,8 @@ class S3Client:
                     http_status_code,
                     f"ダウンロード中に予期しないエラーが発生しました: {error_message}",
                 )
+        except S3BadRequest:
+            raise
         except Exception as e:
             logger.error(f"ダウンロード中に予期しないエラーが発生しました: {e}")
             raise S3UnexpectedError(
