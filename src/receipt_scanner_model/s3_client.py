@@ -47,7 +47,12 @@ class S3Client:
             )
             content_length = head_response.get("ContentLength", 0)
 
-            if content_length > max_size:
+            if content_length <= 0:
+                logger.error(f"ファイルサイズが0バイト以下です: {content_length} bytes")
+                raise S3BadRequest(
+                    400, f"ファイルサイズが0バイト以下です: {content_length} bytes"
+                )
+            elif content_length > max_size:
                 logger.error(
                     f"ファイルサイズが制限を超えています: {content_length} bytes"
                 )
