@@ -67,19 +67,19 @@ class S3Client:
 
             if http_status_code == 400:
                 logger.error(
-                    f"ダウンロード中にエラーが起きました: {http_status_code} {error_message}"
+                    f"不正なリクエストです: {http_status_code} {error_message}"
                 )
                 raise S3BadRequest(
                     http_status_code,
-                    f"ダウンロード中にエラーが起きました: {error_message}",
+                    f"不正なリクエストです: {error_message}",
                 )
             elif http_status_code == 404:
                 logger.error(
-                    f"ダウンロード中にエラーが起きました: {http_status_code} {error_message}"
+                    f"指定されたファイルがS3にありません: {http_status_code} {error_message}"
                 )
                 raise S3NotFound(
                     http_status_code,
-                    f"ダウンロード中にエラーが起きました: {error_message}",
+                    f"指定されたファイルがS3にありません: {error_message}",
                 )
             elif http_status_code == 403:
                 logger.error(
@@ -91,19 +91,19 @@ class S3Client:
                 )
             elif http_status_code == 503:
                 logger.error(
-                    f"ダウンロード中に予期しないエラーが発生しました: {http_status_code} {error_message}"
+                    f"S3サービスが一時的に利用できません: {http_status_code} {error_message}"
                 )
                 raise S3ServiceUnavailable(
                     http_status_code,
-                    f"ダウンロード中に予期しないエラーが発生しました: {error_message}",
+                    f"S3サービスが一時的に利用できません: {error_message}",
                 )
             elif http_status_code == 500:
                 logger.error(
-                    f"ダウンロード中に予期しないエラーが発生しました: {http_status_code} {error_message}"
+                    f"S3サービスでInternalServerErrorが発生しました: {http_status_code} {error_message}"
                 )
                 raise S3InternalServerError(
                     http_status_code,
-                    f"ダウンロード中に予期しないエラーが発生しました: {error_message}",
+                    f"S3サービスでInternalServerErrorが発生しました: {error_message}",
                 )
             else:
                 logger.error(
