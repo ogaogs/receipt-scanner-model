@@ -8,7 +8,8 @@ from src.receipt_scanner_model.error import (
     S3NotFound,
     S3Forbidden,
     S3ServiceUnavailable,
-    S3InternalServiceError,
+    S3InternalServerError,
+    S3UnexpectedError,
 )
 
 
@@ -128,7 +129,7 @@ class TestInputValidation:
         """不正なJSONフォーマット"""
         response = client.post(
             "/receipt-analyze",
-            data="{filename: test.jpg}",  # type: ignore
+            content="{filename: test.jpg}",
             headers={"Content-Type": "application/json"},
         )
         assert response.status_code == 422
@@ -239,7 +240,7 @@ class TestS3ErrorHandling:
         assert response.status_code == 500
         assert (
             response.json()["detail"]
-            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+            == "レシート解析中にエラーが起きました。サポートまでお問い合わせください"
         )
 
     def test_s3_internal_service_error_exception(
@@ -249,7 +250,7 @@ class TestS3ErrorHandling:
         mocker.patch.object(
             S3Client,
             "download_image_by_filename",
-            side_effect=S3InternalServiceError(500, "Internal error"),
+            side_effect=S3InternalServerError(500, "Internal error"),
         )
 
         response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
@@ -257,7 +258,25 @@ class TestS3ErrorHandling:
         assert response.status_code == 500
         assert (
             response.json()["detail"]
-            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+            == "レシート解析中にエラーが起きました。しばらくしてから再度お試しください。"
+        )
+
+    def test_s3_unexpected_error_exception(
+        self, client: TestClient, mocker: MockFixture
+    ):
+        """S3UnexpectedError例外"""
+        mocker.patch.object(
+            S3Client,
+            "download_image_by_filename",
+            side_effect=S3UnexpectedError(500, "Unexpected error"),
+        )
+
+        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+
+        assert response.status_code == 500
+        assert (
+            response.json()["detail"]
+            == "レシート解析中にエラーが起きました。しばらくしてから再度お試しください。問題が継続する場合は、サポートまでお問い合わせください"
         )
 
 
@@ -279,7 +298,7 @@ class TestInternalServerErrors:
         assert response.status_code == 500
         assert (
             response.json()["detail"]
-            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+            == "レシート解析中にエラーが起きました。しばらくしてから再度お試しください。問題が継続する場合は、サポートまでお問い合わせください"
         )
 
     def test_s3_client_initialization_failure(
@@ -295,7 +314,7 @@ class TestInternalServerErrors:
         assert response.status_code == 500
         assert (
             response.json()["detail"]
-            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+            == "レシート解析中にエラーが起きました。しばらくしてから再度お試しください。問題が継続する場合は、サポートまでお問い合わせください"
         )
 
     def test_get_receipt_detail_failure(self, client: TestClient, mocker: MockFixture):
@@ -314,7 +333,7 @@ class TestInternalServerErrors:
         assert response.status_code == 500
         assert (
             response.json()["detail"]
-            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+            == "レシート解析中にエラーが起きました。しばらくしてから再度お試しください。問題が継続する場合は、サポートまでお問い合わせください"
         )
 
 
@@ -364,18 +383,29 @@ class TestHandleReceiptException:
         assert result.status_code == 500
         assert (
             result.detail
-            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+            == "レシート解析中にエラーが起きました。サポートまでお問い合わせください"
         )
 
     def test_handle_s3_internal_service_error(self):
         """S3InternalServiceError例外の処理"""
-        exception = S3InternalServiceError(500, "Internal error")
+        exception = S3InternalServerError(500, "Internal error")
         result = handle_receipt_exception(exception, "test.jpg")
 
         assert result.status_code == 500
         assert (
             result.detail
-            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+            == "レシート解析中にエラーが起きました。しばらくしてから再度お試しください。"
+        )
+
+    def test_handle_s3_unexpected_error(self):
+        """S3UnexpectedError例外の処理"""
+        exception = S3UnexpectedError(500, "Unexpected error")
+        result = handle_receipt_exception(exception, "test.jpg")
+
+        assert result.status_code == 500
+        assert (
+            result.detail
+            == "レシート解析中にエラーが起きました。しばらくしてから再度お試しください。問題が継続する場合は、サポートまでお問い合わせください"
         )
 
     def test_handle_unknown_exception(self):
@@ -386,7 +416,7 @@ class TestHandleReceiptException:
         assert result.status_code == 500
         assert (
             result.detail
-            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+            == "レシート解析中にエラーが起きました。しばらくしてから再度お試しください。問題が継続する場合は、サポートまでお問い合わせください"
         )
 
     def test_handle_exception_with_none_filename(self):
@@ -397,5 +427,5 @@ class TestHandleReceiptException:
         assert result.status_code == 500
         assert (
             result.detail
-            == "レシート解析中にエラーが起きました。開発者にお問い合わせください。"
+            == "レシート解析中にエラーが起きました。しばらくしてから再度お試しください。問題が継続する場合は、サポートまでお問い合わせください"
         )
