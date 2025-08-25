@@ -62,7 +62,8 @@ class S3Client:
 
             # サイズが問題なければダウンロード
             response = self.s3_client.get_object(Bucket=self.bucket_name, Key=filename)
-            return response["Body"].read()
+            with response["Body"] as stream:
+                return stream.read()
 
         except ClientError as e:
             error_message = e.response["Error"]["Message"]
