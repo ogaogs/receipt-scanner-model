@@ -15,6 +15,8 @@ from src.receipt_scanner_model.error import (
 
 logger = logging.getLogger(__name__)
 
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
 
 class S3Client:
     """S3からの画像ダウンロードを行うクライアント"""
@@ -30,7 +32,7 @@ class S3Client:
         )
 
     def download_image_by_filename(
-        self, filename: str, max_size: int = 5 * 1024 * 1024
+        self, filename: str, max_size: int = MAX_FILE_SIZE
     ) -> bytes:
         """S3からファイル名を指定して画像をダウンロードする
 

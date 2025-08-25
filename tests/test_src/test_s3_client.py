@@ -6,7 +6,7 @@ from botocore.exceptions import (
     EndpointConnectionError,
     ConnectTimeoutError,
 )
-from src.receipt_scanner_model.s3_client import S3Client
+from src.receipt_scanner_model.s3_client import S3Client, MAX_FILE_SIZE
 from src.receipt_scanner_model.error import (
     S3BadRequest,
     S3NotFound,
@@ -90,9 +90,9 @@ def test_download_image_by_filename_success(mock_aws_s3_client, s3_client):
         (0, False, "ファイルサイズが0バイト以下です"),
         (1, True, None),
         # 上限境界値テスト (5MB = 5,242,880 bytes)
-        (5 * 1024 * 1024 - 1, True, None),  # 最大値-1
-        (5 * 1024 * 1024, True, None),  # 最大値
-        (5 * 1024 * 1024 + 1, False, "ファイルサイズが制限を超えています"),  # 最大値+1
+        (MAX_FILE_SIZE - 1, True, None),  # 最大値-1
+        (MAX_FILE_SIZE, True, None),  # 最大値
+        (MAX_FILE_SIZE + 1, False, "ファイルサイズが制限を超えています"),  # 最大値+1
     ],
 )
 def test_file_size_boundary_values(
