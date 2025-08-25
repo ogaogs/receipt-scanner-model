@@ -15,6 +15,8 @@ from src.receipt_scanner_model.error import (
 
 logger = logging.getLogger(__name__)
 
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
 
 class S3Client:
     """S3からの画像ダウンロードを行うクライアント"""
@@ -30,7 +32,7 @@ class S3Client:
         )
 
     def download_image_by_filename(
-        self, filename: str, max_size: int = 5 * 1024 * 1024
+        self, filename: str, max_size: int = MAX_FILE_SIZE
     ) -> bytes:
         """S3からファイル名を指定して画像をダウンロードする
 
@@ -47,7 +49,12 @@ class S3Client:
             )
             content_length = head_response.get("ContentLength", 0)
 
-            if content_length > max_size:
+            if content_length <= 0:
+                logger.error(f"ファイルサイズが0バイト以下です: {content_length} bytes")
+                raise S3BadRequest(
+                    400, f"ファイルサイズが0バイト以下です: {content_length} bytes"
+                )
+            elif content_length > max_size:
                 logger.error(
                     f"ファイルサイズが制限を超えています: {content_length} bytes"
                 )
@@ -57,7 +64,8 @@ class S3Client:
 
             # サイズが問題なければダウンロード
             response = self.s3_client.get_object(Bucket=self.bucket_name, Key=filename)
-            return response["Body"].read()
+            with response["Body"] as stream:
+                return stream.read()
 
         except ClientError as e:
             error_message = e.response["Error"]["Message"]
@@ -113,6 +121,8 @@ class S3Client:
                     http_status_code,
                     f"ダウンロード中に予期しないエラーが発生しました: {error_message}",
                 )
+        except S3BadRequest:
+            raise
         except Exception as e:
             logger.error(f"ダウンロード中に予期しないエラーが発生しました: {e}")
             raise S3UnexpectedError(
