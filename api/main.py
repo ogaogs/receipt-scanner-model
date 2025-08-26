@@ -12,6 +12,9 @@ from src.receipt_scanner_model.error import (
     S3Forbidden,
     S3ServiceUnavailable,
     S3InternalServerError,
+    OpenAIAuthenticationError,
+    OpenAIServiceUnavailable,
+    OpenAIResponseFormatError,
 )
 from pathvalidate import ValidationError, validate_filename
 
@@ -68,7 +71,9 @@ def handle_receipt_exception(e: Exception, filename: str | None):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="レシート解析中にエラーが起きました。再度レシートをアップロードしてください。",
         )
-    elif isinstance(e, S3ServiceUnavailable):
+    elif isinstance(
+        e, (S3ServiceUnavailable, OpenAIServiceUnavailable, OpenAIResponseFormatError)
+    ):
         return HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。",
@@ -78,12 +83,12 @@ def handle_receipt_exception(e: Exception, filename: str | None):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。",
         )
-    elif isinstance(e, S3Forbidden):
+    elif isinstance(e, (S3Forbidden, OpenAIAuthenticationError)):
         return HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="レシート解析中にエラーが起きました。サポートまでお問い合わせください",
         )
-    else:  # S3UnexpectedError とその他のエラー
+    else:  # S3UnexpectedError, OpenAIUnexpectedErrorその他のエラー
         return HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。問題が継続する場合は、サポートまでお問い合わせください",
