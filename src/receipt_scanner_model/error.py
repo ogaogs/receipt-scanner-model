@@ -28,3 +28,19 @@ class S3InternalServerError(ErrorResponse):
 
 class S3UnexpectedError(ErrorResponse):
     pass
+
+
+class OpenAIAuthenticationError(ErrorResponse):
+    pass
+
+
+class OpenAIServiceUnavailable(ErrorResponse):
+    pass
+
+
+class OpenAIUnexpectedError(ErrorResponse):
+    pass
+
+
+class OpenAIResponseFormatError(ErrorResponse):
+    pass
