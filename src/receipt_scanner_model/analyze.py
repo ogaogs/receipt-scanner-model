@@ -13,10 +13,4 @@ def get_receipt_detail(img_bytes: bytes) -> ReceiptDetail:
     """
     openai_handler = OpenAIHandler()
     base64_image = encode_image(img_bytes)
-    result = openai_handler.analyze_image(base64_image)
-    return ReceiptDetail(
-        store_name=result.store_name,
-        date=result.date,
-        amount=result.amount,
-        category=result.category,
-    )
+    return openai_handler.analyze_image(base64_image)
