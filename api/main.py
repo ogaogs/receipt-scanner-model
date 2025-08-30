@@ -120,9 +120,9 @@ def receipt_analyze(request: FileName) -> ReceiptDetail:
         s3_client = S3Client()
 
         # S3からファイル名を指定して画像をダウンロード
-        image_bytes = s3_client.download_image_by_filename(filename)
+        image_bytes, image_type = s3_client.download_image_by_filename(filename)
 
-        receipt_detail = get_receipt_detail(image_bytes)
+        receipt_detail = get_receipt_detail(image_bytes, image_type)
         return receipt_detail
     except Exception as e:
         raise handle_receipt_exception(e, filename)

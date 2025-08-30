@@ -33,7 +33,7 @@ class S3Client:
 
     def download_image_by_filename(
         self, filename: str, max_size: int = MAX_FILE_SIZE
-    ) -> bytes:
+    ) -> tuple[bytes, str]:
         """S3からファイル名を指定して画像をダウンロードする
 
         Args:
@@ -41,6 +41,7 @@ class S3Client:
 
         Returns:
             bytes: ダウンロードした画像
+            str: 画像のMIMEタイプ（例: "jpeg", "png"）
         """
         try:
             # まずheadでファイルサイズを確認
@@ -62,10 +63,26 @@ class S3Client:
                     400, f"ファイルサイズが制限を超えています: {content_length} bytes"
                 )
 
-            # サイズが問題なければダウンロード
+            content_type = head_response.get("ContentType", None)
+
+            if content_type is None or not content_type.startswith("image/"):
+                logger.error(
+                    f"ファイルのContent-Typeが画像ではありません: {content_type}"
+                )
+                raise S3BadRequest(
+                    400, f"ファイルのContent-Typeが画像ではありません: {content_type}"
+                )
+            image_type = content_type.split("/")[1].lower()
+            if image_type not in ["png", "jpeg", "jpg"]:
+                logger.error(f"サポートされていない画像形式です: {image_type}")
+                raise S3BadRequest(
+                    400, f"サポートされていない画像形式です: {image_type}"
+                )
+
+            # サイズ・画像タイプに問題なければダウンロード
             response = self.s3_client.get_object(Bucket=self.bucket_name, Key=filename)
             with response["Body"] as stream:
-                return stream.read()
+                return stream.read(), image_type
 
         except ClientError as e:
             error_message = e.response["Error"]["Message"]
