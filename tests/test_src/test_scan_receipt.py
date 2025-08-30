@@ -1,3 +1,5 @@
+"""src/receipt_scanner_model/scan_receipt.pyは現在使用していない。"""
+
 import os
 from src.receipt_scanner_model import scan_receipt
 from PIL import Image

@@ -1,3 +1,5 @@
+"""レシートの画像から合計金額を取得するスクリプト。現在使用していない。"""
+
 from PIL import Image, ImageEnhance
 
 import cv2
