@@ -11,6 +11,7 @@ from src.receipt_scanner_model.error import (
     S3InternalServerError,
     S3UnexpectedError,
 )
+import tomllib
 
 
 @pytest.fixture
@@ -23,8 +24,13 @@ def test_root(client: TestClient):
     APIのバージョンを確認するテスト
     """
     response = client.get("/")
+
+    with open("pyproject.toml", "rb") as f:
+        data = tomllib.load(f)
+    version = data["project"]["version"]
+
     assert response.status_code == 200
-    assert response.json() == {"version": "0.1.0"}
+    assert response.json() == {"version": version}
 
 
 def test_receipt_analyze_success(client: TestClient, mocker: MockFixture):
