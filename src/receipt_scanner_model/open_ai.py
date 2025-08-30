@@ -87,9 +87,12 @@ class OpenAIHandler:
     MODEL = "gpt-4o-mini"
     TEMPERATURE = 0
     MAX_TOKENS = 16384
+    MAX_RETRIES = 3
 
     def __init__(self):
-        self.client = OpenAI(api_key=setting.openai_api_key, max_retries=3)
+        self.client = OpenAI(
+            api_key=setting.openai_api_key, max_retries=OpenAIHandler.MAX_RETRIES
+        )
 
     @openai_error_handling
     def analyze_image(self, base64_image: str):
