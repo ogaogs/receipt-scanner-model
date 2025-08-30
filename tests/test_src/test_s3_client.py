@@ -292,3 +292,24 @@ def test_unexpected_error(mock_aws_s3_client, s3_client, exception_type, error_m
 
     assert exc_info.value.code == 500
     assert "ダウンロード中に予期しないエラーが発生しました" in exc_info.value.message
+
+
+@pytest.mark.parametrize(
+    "file_name, content_type",
+    [
+        ("test_file.pdf", "application/pdf"),
+        ("test_file.gif", "image/gif"),
+    ],
+)
+def test_invalid_content_type(file_name, content_type, mock_aws_s3_client, s3_client):
+    """Content-Typeが画像でない場合のテスト（lines 68-74のカバレッジ）"""
+
+    mock_aws_s3_client.head_object.return_value = {
+        "ContentLength": 1024,
+        "ContentType": content_type,
+    }
+
+    with pytest.raises(S3BadRequest) as exc_info:
+        s3_client.download_image_by_filename(file_name)
+
+    assert exc_info.value.code == 400
