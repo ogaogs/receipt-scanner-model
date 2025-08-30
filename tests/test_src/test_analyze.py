@@ -9,14 +9,12 @@ from src.receipt_scanner_model.error import (
 )
 from src.receipt_scanner_model.analyze import get_receipt_detail
 
-# セキュアなテスト用データ
 TEST_IMAGE_BYTES = b"MockImageBytesForTesting"
 TEST_BASE64_IMAGE = "data:image/png;base64,MockImageDataForTesting"
 
 
 @pytest.fixture
 def test_receipt_detail() -> ReceiptDetail:
-    """テスト用のReceiptDetailフィクスチャ"""
     return ReceiptDetail(
         store_name="Test Store",
         date="2023/10/01",
@@ -27,7 +25,6 @@ def test_receipt_detail() -> ReceiptDetail:
 
 @pytest.fixture
 def mock_encode_image(mocker: MockFixture):
-    """encode_image関数のモック"""
     return mocker.patch(
         "src.receipt_scanner_model.analyze.encode_image",
         return_value=TEST_BASE64_IMAGE,
@@ -36,7 +33,6 @@ def mock_encode_image(mocker: MockFixture):
 
 @pytest.fixture
 def mock_openai_handler(mocker: MockFixture):
-    """OpenAIHandlerのモック"""
     return mocker.patch("src.receipt_scanner_model.analyze.OpenAIHandler").return_value
 
 
@@ -48,7 +44,6 @@ def test_get_receipt_detail_success(
 
     result = get_receipt_detail(TEST_IMAGE_BYTES)
 
-    # 結果の検証
     assert result.store_name == test_receipt_detail.store_name
     assert result.date == test_receipt_detail.date
     assert result.amount == test_receipt_detail.amount
@@ -86,7 +81,6 @@ def test_get_receipt_detail_error_handling(
     status_code,
     expected_message,
 ):
-    """get_receipt_detailのエラーハンドリングをテスト"""
     mock_openai_handler.analyze_image.side_effect = exception(
         status_code, expected_message
     )

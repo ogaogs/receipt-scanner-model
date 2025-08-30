@@ -20,7 +20,6 @@ from openai import (
     AuthenticationError,
 )
 
-# セキュアなテスト用Base64データ
 TEST_BASE64_IMAGE = "data:image/png;base64,MockImageDataForTesting"
 
 
@@ -62,7 +61,6 @@ def test_receipt_detail() -> ReceiptDetail:
 
 @pytest.fixture
 def mock_openai_client(mocker: MockFixture):
-    """OpenAIクライアントのモックを作成するフィクスチャ"""
     mock_client = mocker.MagicMock()
     mocker.patch("src.receipt_scanner_model.open_ai.OpenAI", return_value=mock_client)
     return mock_client
@@ -91,6 +89,16 @@ def test_analyze_image_success(
     assert result.category == test_receipt_detail.category
 
 
+def test_openai_handler_initialization():
+    handler = OpenAIHandler()
+
+    assert handler.client is not None
+    assert handler.client.max_retries == OpenAIHandler.MAX_RETRIES
+    assert handler.MODEL == OpenAIHandler.MODEL
+    assert handler.TEMPERATURE == OpenAIHandler.TEMPERATURE
+    assert handler.MAX_TOKENS == OpenAIHandler.MAX_TOKENS
+
+
 def test_analyze_image_response_format_error(mock_openai_client):
     mock_completion = create_mock_completion(parsed_data=None)
     mock_openai_client.beta.chat.completions.parse.return_value = mock_completion
@@ -101,18 +109,6 @@ def test_analyze_image_response_format_error(mock_openai_client):
 
     assert exc_info.value.code == 503
     assert exc_info.value.message == "OpenAIの応答の解析に失敗しました。"
-
-
-def test_openai_handler_initialization():
-    """OpenAIHandler初期化の基本テスト"""
-    handler = OpenAIHandler()
-
-    # 基本的な属性の確認
-    assert handler.client is not None
-    assert handler.client.max_retries == OpenAIHandler.MAX_RETRIES
-    assert handler.MODEL == OpenAIHandler.MODEL
-    assert handler.TEMPERATURE == OpenAIHandler.TEMPERATURE
-    assert handler.MAX_TOKENS == OpenAIHandler.MAX_TOKENS
 
 
 @pytest.mark.parametrize(
