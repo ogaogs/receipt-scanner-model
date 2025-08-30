@@ -13,6 +13,9 @@ from src.receipt_scanner_model.error import (
 )
 import tomllib
 
+TEST_FILE_NAME = "test.png"
+MOCK_IMAGE_BYTES = b"mock_image_bytes"
+
 
 @pytest.fixture
 def client():
@@ -35,8 +38,11 @@ def test_root(client: TestClient):
 
 def test_receipt_analyze_success(client: TestClient, mocker: MockFixture):
     """正常なレシート解析処理"""
+    test_file_type = "png"
     mock_s3_client = mocker.patch.object(
-        S3Client, "download_image_by_filename", return_value=b"mock_image_bytes"
+        S3Client,
+        "download_image_by_filename",
+        return_value=(MOCK_IMAGE_BYTES, test_file_type),
     )
 
     mock_get_receipt_detail = mocker.patch(
@@ -49,7 +55,7 @@ def test_receipt_analyze_success(client: TestClient, mocker: MockFixture):
         },
     )
 
-    response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+    response = client.post("/receipt-analyze", json={"filename": TEST_FILE_NAME})
 
     assert response.status_code == 200
     assert response.json() == {
@@ -59,15 +65,20 @@ def test_receipt_analyze_success(client: TestClient, mocker: MockFixture):
         "category": "食費",
     }
 
-    mock_s3_client.assert_called_once_with("test.jpg")
-    mock_get_receipt_detail.assert_called_once_with(b"mock_image_bytes")
+    mock_s3_client.assert_called_once_with(TEST_FILE_NAME)
+    mock_get_receipt_detail.assert_called_once_with(MOCK_IMAGE_BYTES, test_file_type)
 
 
 def test_receipt_analyze_with_extra_fields(client: TestClient, mocker: MockFixture):
     # NOTE: 現在は正常系としているが、422にする可能性あり。
     """余分なフィールドがあっても正常処理されること"""
+
+    test_file_type = "png"
+
     mock_s3_client = mocker.patch.object(
-        S3Client, "download_image_by_filename", return_value=b"mock_image_bytes"
+        S3Client,
+        "download_image_by_filename",
+        return_value=(MOCK_IMAGE_BYTES, test_file_type),
     )
     mocker.patch(
         "api.main.get_receipt_detail",
@@ -81,11 +92,15 @@ def test_receipt_analyze_with_extra_fields(client: TestClient, mocker: MockFixtu
 
     response = client.post(
         "/receipt-analyze",
-        json={"filename": "test.jpg", "extra_field": "ignored", "another_field": 123},
+        json={
+            "filename": TEST_FILE_NAME,
+            "extra_field": "ignored",
+            "another_field": 123,
+        },
     )
 
     assert response.status_code == 200
-    mock_s3_client.assert_called_once_with("test.jpg")
+    mock_s3_client.assert_called_once_with(TEST_FILE_NAME)
 
 
 class TestInputValidation:
@@ -121,7 +136,9 @@ class TestInputValidation:
             == "レシート解析中にエラーが起きました。再度レシートをアップロードしてください。"
         )
 
-    @pytest.mark.parametrize("invalid_filename", [123, [], {}, True, ["test.jpg"], 1.5])
+    @pytest.mark.parametrize(
+        "invalid_filename", [123, [], {}, True, [TEST_FILE_NAME], 1.5]
+    )
     def test_invalid_filename_type(self, client: TestClient, invalid_filename):
         """filenameが文字列以外"""
         response = client.post("/receipt-analyze", json={"filename": invalid_filename})
@@ -135,7 +152,7 @@ class TestInputValidation:
         """不正なJSONフォーマット"""
         response = client.post(
             "/receipt-analyze",
-            content="{filename: test.jpg}",
+            content="{filename: test.png}",
             headers={"Content-Type": "application/json"},
         )
         assert response.status_code == 422
@@ -148,7 +165,7 @@ class TestInputValidation:
         """Content-Typeが不正"""
         response = client.post(
             "/receipt-analyze",
-            json={"filename": "test.jpg"},
+            json={"filename": TEST_FILE_NAME},
             headers={"Content-Type": "text/plain"},
         )
         assert response.status_code == 422
@@ -191,7 +208,7 @@ class TestS3ErrorHandling:
             side_effect=S3BadRequest(400, "Bad request"),
         )
 
-        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+        response = client.post("/receipt-analyze", json={"filename": TEST_FILE_NAME})
 
         assert response.status_code == 400
         assert (
@@ -225,7 +242,7 @@ class TestS3ErrorHandling:
             side_effect=S3ServiceUnavailable(503, "Service unavailable"),
         )
 
-        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+        response = client.post("/receipt-analyze", json={"filename": TEST_FILE_NAME})
 
         assert response.status_code == 503
         assert (
@@ -241,7 +258,7 @@ class TestS3ErrorHandling:
             side_effect=S3Forbidden(403, "Forbidden"),
         )
 
-        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+        response = client.post("/receipt-analyze", json={"filename": TEST_FILE_NAME})
 
         assert response.status_code == 500
         assert (
@@ -259,7 +276,7 @@ class TestS3ErrorHandling:
             side_effect=S3InternalServerError(500, "Internal error"),
         )
 
-        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+        response = client.post("/receipt-analyze", json={"filename": TEST_FILE_NAME})
 
         assert response.status_code == 500
         assert (
@@ -277,7 +294,7 @@ class TestS3ErrorHandling:
             side_effect=S3UnexpectedError(500, "Unexpected error"),
         )
 
-        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+        response = client.post("/receipt-analyze", json={"filename": TEST_FILE_NAME})
 
         assert response.status_code == 500
         assert (
@@ -299,7 +316,7 @@ class TestInternalServerErrors:
             side_effect=ValueError("unexpected error"),
         )
 
-        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+        response = client.post("/receipt-analyze", json={"filename": TEST_FILE_NAME})
 
         assert response.status_code == 500
         assert (
@@ -315,7 +332,7 @@ class TestInternalServerErrors:
             "api.main.S3Client", side_effect=AttributeError("S3Client init failed")
         )
 
-        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+        response = client.post("/receipt-analyze", json={"filename": TEST_FILE_NAME})
 
         assert response.status_code == 500
         assert (
@@ -327,14 +344,14 @@ class TestInternalServerErrors:
         # FIXME get_receipt_detailのエラーハンドリングを整備後に詳細なテストが必要。
         """get_receipt_detail関数でのエラー"""
         mocker.patch.object(
-            S3Client, "download_image_by_filename", return_value=b"mock_image_bytes"
+            S3Client, "download_image_by_filename", return_value=MOCK_IMAGE_BYTES
         )
         mocker.patch(
             "api.main.get_receipt_detail",
             side_effect=RuntimeError("Receipt analysis failed"),
         )
 
-        response = client.post("/receipt-analyze", json={"filename": "test.jpg"})
+        response = client.post("/receipt-analyze", json={"filename": TEST_FILE_NAME})
 
         assert response.status_code == 500
         assert (
@@ -351,7 +368,7 @@ class TestHandleReceiptException:
     def test_handle_s3_bad_request(self):
         """S3BadRequest例外の処理"""
         exception = S3BadRequest(400, "Bad request")
-        result = handle_receipt_exception(exception, "test.jpg")
+        result = handle_receipt_exception(exception, TEST_FILE_NAME)
 
         assert result.status_code == 400
         assert (
@@ -362,7 +379,7 @@ class TestHandleReceiptException:
     def test_handle_s3_not_found(self):
         """S3NotFound例外の処理"""
         exception = S3NotFound(404, "Not found")
-        result = handle_receipt_exception(exception, "test.jpg")
+        result = handle_receipt_exception(exception, TEST_FILE_NAME)
 
         assert result.status_code == 400
         assert (
@@ -373,7 +390,7 @@ class TestHandleReceiptException:
     def test_handle_s3_service_unavailable(self):
         """S3ServiceUnavailable例外の処理"""
         exception = S3ServiceUnavailable(503, "Service unavailable")
-        result = handle_receipt_exception(exception, "test.jpg")
+        result = handle_receipt_exception(exception, TEST_FILE_NAME)
 
         assert result.status_code == 503
         assert (
@@ -384,7 +401,7 @@ class TestHandleReceiptException:
     def test_handle_s3_forbidden(self):
         """S3Forbidden例外の処理"""
         exception = S3Forbidden(403, "Forbidden")
-        result = handle_receipt_exception(exception, "test.jpg")
+        result = handle_receipt_exception(exception, TEST_FILE_NAME)
 
         assert result.status_code == 500
         assert (
@@ -395,7 +412,7 @@ class TestHandleReceiptException:
     def test_handle_s3_internal_service_error(self):
         """S3InternalServiceError例外の処理"""
         exception = S3InternalServerError(500, "Internal error")
-        result = handle_receipt_exception(exception, "test.jpg")
+        result = handle_receipt_exception(exception, TEST_FILE_NAME)
 
         assert result.status_code == 500
         assert (
@@ -406,7 +423,7 @@ class TestHandleReceiptException:
     def test_handle_s3_unexpected_error(self):
         """S3UnexpectedError例外の処理"""
         exception = S3UnexpectedError(500, "Unexpected error")
-        result = handle_receipt_exception(exception, "test.jpg")
+        result = handle_receipt_exception(exception, TEST_FILE_NAME)
 
         assert result.status_code == 500
         assert (
@@ -417,7 +434,7 @@ class TestHandleReceiptException:
     def test_handle_unknown_exception(self):
         """予期せぬ例外の処理"""
         exception = ValueError("Unknown error")
-        result = handle_receipt_exception(exception, "test.jpg")
+        result = handle_receipt_exception(exception, TEST_FILE_NAME)
 
         assert result.status_code == 500
         assert (

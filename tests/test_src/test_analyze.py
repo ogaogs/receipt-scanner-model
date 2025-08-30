@@ -10,6 +10,7 @@ from src.receipt_scanner_model.error import (
 from src.receipt_scanner_model.analyze import get_receipt_detail
 
 TEST_IMAGE_BYTES = b"MockImageBytesForTesting"
+TEST_IMAGE_TYPE = "png"
 TEST_BASE64_IMAGE = "data:image/png;base64,MockImageDataForTesting"
 
 
@@ -42,7 +43,7 @@ def test_get_receipt_detail_success(
 ):
     mock_openai_handler.analyze_image.return_value = test_receipt_detail
 
-    result = get_receipt_detail(TEST_IMAGE_BYTES)
+    result = get_receipt_detail(TEST_IMAGE_BYTES, TEST_IMAGE_TYPE)
 
     assert result.store_name == test_receipt_detail.store_name
     assert result.date == test_receipt_detail.date
@@ -86,7 +87,7 @@ def test_get_receipt_detail_error_handling(
     )
 
     with pytest.raises(exception) as exc_info:
-        get_receipt_detail(TEST_IMAGE_BYTES)
+        get_receipt_detail(TEST_IMAGE_BYTES, TEST_IMAGE_TYPE)
 
     assert exc_info.value.code == status_code
     assert exc_info.value.message == expected_message

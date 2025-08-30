@@ -21,6 +21,7 @@ from openai import (
 )
 
 TEST_BASE64_IMAGE = "data:image/png;base64,MockImageDataForTesting"
+TEST_IMAGE_TYPE = "png"
 
 
 def create_mock_completion(parsed_data=None):
@@ -81,7 +82,7 @@ def test_analyze_image_success(
     mock_openai_client.beta.chat.completions.parse.return_value = mock_openai_result
 
     openai_handler = OpenAIHandler()
-    result = openai_handler.analyze_image(TEST_BASE64_IMAGE)
+    result = openai_handler.analyze_image(TEST_BASE64_IMAGE, TEST_IMAGE_TYPE)
 
     assert result.store_name == test_receipt_detail.store_name
     assert result.date == test_receipt_detail.date
@@ -105,7 +106,7 @@ def test_analyze_image_response_format_error(mock_openai_client):
 
     openai_handler = OpenAIHandler()
     with pytest.raises(OpenAIResponseFormatError) as exc_info:
-        openai_handler.analyze_image(TEST_BASE64_IMAGE)
+        openai_handler.analyze_image(TEST_BASE64_IMAGE, TEST_IMAGE_TYPE)
 
     assert exc_info.value.code == 503
     assert exc_info.value.message == "OpenAIの応答の解析に失敗しました。"
@@ -179,7 +180,7 @@ def test_analyze_image_error_handling(
 
     openai_handler = OpenAIHandler()
     with pytest.raises(expected_exception) as exc_info:
-        openai_handler.analyze_image(TEST_BASE64_IMAGE)
+        openai_handler.analyze_image(TEST_BASE64_IMAGE, TEST_IMAGE_TYPE)
 
     assert exc_info.value.code == status_code
     assert exc_info.value.message == expected_message
