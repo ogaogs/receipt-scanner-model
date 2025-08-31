@@ -15,4 +15,4 @@ jobs:
       - name: Run pre-commit
         run: |
           rye run pre-commit install
-          rye run pre-commit run --all-files
+          pre-commit run --all-files
