@@ -41,7 +41,7 @@ class S3Client:
 
         Returns:
             bytes: ダウンロードした画像
-            str: 画像のMIMEタイプ（例: "jpeg", "png"）
+            str: コンテントのMIMEタイプ（例: "image/jpeg", "image/png"）
         """
         try:
             # まずheadでファイルサイズを確認
@@ -72,17 +72,16 @@ class S3Client:
                 raise S3BadRequest(
                     400, f"ファイルのContent-Typeが画像ではありません: {content_type}"
                 )
-            image_type = content_type.split("/")[1].lower()
-            if image_type not in ["png", "jpeg", "jpg"]:
-                logger.error(f"サポートされていない画像形式です: {image_type}")
+            if content_type not in ["image/png", "image/jpeg"]:
+                logger.error(f"サポートされていない画像形式です: {content_type}")
                 raise S3BadRequest(
-                    400, f"サポートされていない画像形式です: {image_type}"
+                    400, f"サポートされていない画像形式です: {content_type}"
                 )
 
             # サイズ・画像タイプに問題なければダウンロード
             response = self.s3_client.get_object(Bucket=self.bucket_name, Key=filename)
             with response["Body"] as stream:
-                return stream.read(), image_type
+                return stream.read(), content_type
 
         except ClientError as e:
             error_message = e.response["Error"]["Message"]
