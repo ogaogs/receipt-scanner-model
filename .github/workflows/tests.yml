@@ -1,0 +1,28 @@
+name: tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "*.md"
+      - "/investigation/"
+      - "/raw"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: eifinger/setup-rye@v4
+        id: setup-rye
+      - name: Pin python-version 3.12.4
+        run: rye pin 3.12.4
+      - name: Install dependencies
+        if: steps.setup-rye.outputs.cache-hit != 'true'
+        run: |
+          rye sync
+
+      - name: Run tests
+        run: coverage run --branch -m pytest tests/
