@@ -6,8 +6,8 @@ on:
       - main
     paths-ignore:
       - "*.md"
-      - "/investigation/"
-      - "/raw"
+      - "/investigation/**"
+      - "/raw/**"
 
 jobs:
   test:
@@ -25,4 +25,4 @@ jobs:
           rye sync
 
       - name: Run tests
-        run: coverage run --branch -m pytest tests/
+        run: rye run pytest tests
