@@ -28,3 +28,4 @@ logs/
 
 # coverage reports
 .coverage
+coverage.xml

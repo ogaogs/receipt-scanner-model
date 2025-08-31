@@ -1,0 +1,41 @@
+name: tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "*.md"
+      - "investigation/**"
+      - "raw/**"
+
+env:
+  BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: eifinger/setup-rye@v4
+        id: setup-rye
+      - name: Pin python-version from .python-version
+        run: rye pin "$(cat .python-version)"
+      - name: Install dependencies
+        run: rye sync
+      - name: Run tests with coverage
+        run: rye run coverage run --branch -m pytest tests
+      - name: Generate coverage XML
+        run: rye run coverage xml --include="api/*,src/*"
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: ./coverage.xml

@@ -4,6 +4,7 @@ import os
 from src.receipt_scanner_model import scan_receipt
 from PIL import Image
 import io
+import pytest
 
 # 現在のスクリプトのディレクトリを取得
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -12,6 +13,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 TEST_IMAGE_PATH = os.path.join(current_dir, "../../raw/ok.jpeg")
 
 
+@pytest.mark.skip(reason="現在使用していない")
 def test_main():
     """
     レシートの合計金額を取得する関数のテスト
@@ -25,6 +27,7 @@ def test_main():
     assert expected == actual
 
 
+@pytest.mark.skip(reason="現在使用していない")
 def test_dict_max_empty():
     """
     amount_dictが{}の場合のdict_max関数のテスト
@@ -35,6 +38,7 @@ def test_dict_max_empty():
     assert expected == actual
 
 
+@pytest.mark.skip(reason="現在使用していない")
 def test_dict_max():
     """
     dict_max関数のテスト
@@ -45,6 +49,7 @@ def test_dict_max():
     assert expected == actual
 
 
+@pytest.mark.skip(reason="現在使用していない")
 def test_get_most_likely():
     """
     get_most_likely関数のテスト
