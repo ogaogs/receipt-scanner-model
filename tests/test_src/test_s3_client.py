@@ -38,12 +38,12 @@ def setup_s3_mocks(
     mock_s3_client,
     content_length=1024,
     file_content=b"test_content",
-    image_type="image/png",
+    content_type="image/png",
 ):
     """S3モックの共通セットアップ"""
     mock_s3_client.head_object.return_value = {
         "ContentLength": content_length,
-        "ContentType": image_type,
+        "ContentType": content_type,
     }
     mock_s3_client.get_object.return_value = {"Body": io.BytesIO(file_content)}
 
@@ -73,11 +73,11 @@ def test_download_image_by_filename_success(mock_aws_s3_client, s3_client):
     """download_image_by_filenameが正常に動作することをテスト"""
     test_filename = "test_receipt.jpg"
     file_content = b"test_image_content"
-    image_type = "png"
+    content_type = "image/png"
 
     setup_s3_mocks(mock_aws_s3_client, content_length=1024, file_content=file_content)
 
-    file_content_result, image_type_result = s3_client.download_image_by_filename(
+    file_content_result, content_type_result = s3_client.download_image_by_filename(
         test_filename
     )
 
@@ -91,7 +91,7 @@ def test_download_image_by_filename_success(mock_aws_s3_client, s3_client):
 
     # 戻り値が期待通りであることを確認
     assert file_content_result == file_content
-    assert image_type_result == image_type
+    assert content_type_result == content_type
 
 
 @pytest.mark.parametrize(
@@ -113,7 +113,7 @@ def test_file_size_boundary_values(
     """境界値テスト: ファイルサイズの上限・下限値"""
     test_filename = "test_receipt.jpg"
     file_content = b"test_content"
-    image_type = "image/png"
+    content_type = "image/png"
 
     if expected_success:
         # 正常ケース
@@ -121,18 +121,18 @@ def test_file_size_boundary_values(
             mock_aws_s3_client,
             content_length=file_size,
             file_content=file_content,
-            image_type=image_type,
+            content_type=content_type,
         )
-        file_content_result, image_type_result = s3_client.download_image_by_filename(
+        file_content_result, content_type_result = s3_client.download_image_by_filename(
             test_filename
         )
         assert file_content_result == file_content
-        assert image_type_result == image_type.split("/")[1].lower()
+        assert content_type_result == content_type
     else:
         # エラーケース: head_objectのみセットアップ
         mock_aws_s3_client.head_object.return_value = {
             "ContentLength": file_size,
-            "ContentType": image_type,
+            "ContentType": content_type,
         }
         with pytest.raises(S3BadRequest) as exc_info:
             s3_client.download_image_by_filename(test_filename)
