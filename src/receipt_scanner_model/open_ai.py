@@ -95,12 +95,12 @@ class OpenAIHandler:
         )
 
     @openai_error_handling
-    def analyze_image(self, base64_image: str, image_type: str) -> ReceiptDetail:
+    def analyze_image(self, base64_image: str, content_type: str) -> ReceiptDetail:
         """OpenAIのAPIを呼び出し、レシートの解析を行う
 
         Args:
             base64_image (str): Base64エンコードされた画像データ
-            image_type (str): 画像のMIMEタイプ（例: "jpeg", "png"）
+            content_type (str): コンテントのMIMEタイプ（例: "image/jpeg", "image/png"）
         Returns:
             ReceiptDetail: 解析されたレシートの詳細情報
         """
@@ -116,9 +116,7 @@ class OpenAIHandler:
             "content": [
                 {
                     "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/{image_type};base64,{base64_image}"
-                    },
+                    "image_url": {"url": f"data:{content_type};base64,{base64_image}"},
                 }
             ],
         }
