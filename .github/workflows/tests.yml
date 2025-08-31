@@ -30,5 +30,9 @@ jobs:
         run: rye sync
       - name: Run tests with coverage
         run: rye run coverage run --branch -m pytest tests
-      - name: Generate coverage report
-        run: rye run coverage report --show-missing --include="api/*,src/*"
+      - name: Generate coverage XML
+        run: rye run coverage xml --include="api/*,src/*"
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: ./coverage.xml
