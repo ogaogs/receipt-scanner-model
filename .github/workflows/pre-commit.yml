@@ -9,8 +9,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: eifinger/setup-rye@v4
         id: setup-rye
-      - name: Pin python-version 3.12.4
-        run: rye pin 3.12.4
+      - name: Pin python-version from .python-version
+        run: rye pin "$(cat .python-version)"
       - name: Setup Rye
         run: rye sync
       - name: Run pre-commit hooks

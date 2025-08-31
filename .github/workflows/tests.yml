@@ -6,8 +6,8 @@ on:
       - main
     paths-ignore:
       - "*.md"
-      - "/investigation/**"
-      - "/raw/**"
+      - "investigation/**"
+      - "raw/**"
 
 env:
   BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
@@ -27,9 +27,8 @@ jobs:
       - name: Pin python-version 3.12.4
         run: rye pin 3.12.4
       - name: Install dependencies
-        if: steps.setup-rye.outputs.cache-hit != 'true'
-        run: |
-          rye sync
-
-      - name: Run tests
-        run: rye run pytest tests
+        run: rye sync
+      - name: Run tests with coverage
+        run: rye run coverage run --branch -m pytest tests
+      - name: Generate coverage report
+        run: rye run coverage report --show-missing --include="api/*,src/*"
