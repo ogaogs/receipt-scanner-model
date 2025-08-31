@@ -1,0 +1,18 @@
+name: pre-commit
+
+on: push
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: eifinger/setup-rye@v4
+        id: setup-rye
+      - name: Pin python-version 3.12.4
+        run: rye pin 3.12.4
+
+      - name: Run pre-commit
+        run: |
+          rye run pre-commit install
+          rye run pre-commit run --all-files
