@@ -11,8 +11,7 @@ jobs:
         id: setup-rye
       - name: Pin python-version 3.12.4
         run: rye pin 3.12.4
-
-      - name: Run pre-commit
-        run: |
-          rye run pre-commit install
-          pre-commit run --all-files
+      - name: Setup Rye
+        run: rye sync
+      - name: Run pre-commit hooks
+        run: rye run pre-commit run --all-files
