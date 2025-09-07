@@ -140,5 +140,5 @@ class S3Client:
         except Exception as e:
             logger.error(f"ダウンロード中に予期しないエラーが発生しました: {e}")
             raise S3UnexpectedError(
-                500, f"ダウンロード中に予期しないエラーが発生しました: {e}"
+                f"ダウンロード中に予期しないエラーが発生しました: {e}"
             )
