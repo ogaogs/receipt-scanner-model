@@ -14,6 +14,8 @@ from src.receipt_scanner_model.error import (
     S3ServiceUnavailable,
     S3InternalServerError,
     S3UnexpectedError,
+    ContentSizeError,
+    InvalidContentTypeError,
 )
 
 
@@ -134,29 +136,33 @@ def test_file_size_boundary_values(
             "ContentLength": file_size,
             "ContentType": content_type,
         }
-        with pytest.raises(S3BadRequest) as exc_info:
+        with pytest.raises(ContentSizeError) as exc_info:
             s3_client.download_image_by_filename(test_filename)
-        assert exc_info.value.code == 400
-        assert expected_message in exc_info.value.message
+        assert expected_message in str(exc_info.value)
 
 
 @pytest.mark.parametrize(
     "status_code,error_message,expected_exception,expected_message",
     [
-        (400, "Bad Request", S3BadRequest, "不正なリクエストです: Bad Request"),
-        (403, "Forbidden", S3Forbidden, "アクセスが拒否されました: Forbidden"),
-        (404, "Not Found", S3NotFound, "指定されたファイルがS3にありません: Not Found"),
+        (400, "Bad Request", S3BadRequest, "不正なリクエストです: 400 Bad Request"),
+        (403, "Forbidden", S3Forbidden, "アクセスが拒否されました: 403 Forbidden"),
+        (
+            404,
+            "Not Found",
+            S3NotFound,
+            "指定されたファイルがS3にありません: 404 Not Found",
+        ),
         (
             500,
             "Internal Server Error",
             S3InternalServerError,
-            "S3サービスでInternalServerErrorが発生しました: Internal Server Error",
+            "S3サービスでInternalServerErrorが発生しました: 500 Internal Server Error",
         ),
         (
             503,
             "Service Unavailable",
             S3ServiceUnavailable,
-            "S3サービスが一時的に利用できません: Service Unavailable",
+            "S3サービスが一時的に利用できません: 503 Service Unavailable",
         ),
     ],
 )
@@ -184,8 +190,7 @@ def test_download_image_by_filename_client_errors(
     with pytest.raises(expected_exception) as exc_info:
         s3_client.download_image_by_filename(test_file)
 
-    assert exc_info.value.code == status_code
-    assert exc_info.value.message == expected_message
+    assert str(exc_info.value) == expected_message
 
 
 @pytest.mark.parametrize(
@@ -216,10 +221,9 @@ def test_download_image_by_filename_unexpected_client_error(
     with pytest.raises(S3UnexpectedError) as exc_info:
         s3_client.download_image_by_filename(unexpected_client_error_file)
 
-    assert exc_info.value.code == status_code
     assert (
-        exc_info.value.message
-        == f"ダウンロード中に予期しないエラーが発生しました: {error_message}"
+        str(exc_info.value)
+        == f"ダウンロード中に予期しないエラーが発生しました: {status_code} {error_message}"
     )
 
 
@@ -242,9 +246,7 @@ def test_download_image_by_filename_unexpected_error(mock_aws_s3_client, s3_clie
 
     with pytest.raises(S3UnexpectedError) as exc_info:
         s3_client.download_image_by_filename(unexpected_error_file)
-
-    assert exc_info.value.code == 500
-    assert "ダウンロード中に予期しないエラーが発生しました" in exc_info.value.message
+    assert "ダウンロード中に予期しないエラーが発生しました" in str(exc_info.value)
 
 
 def test_head_object_error(mock_aws_s3_client, s3_client):
@@ -290,18 +292,23 @@ def test_unexpected_error(mock_aws_s3_client, s3_client, exception_type, error_m
     with pytest.raises(S3UnexpectedError) as exc_info:
         s3_client.download_image_by_filename(test_filename)
 
-    assert exc_info.value.code == 500
-    assert "ダウンロード中に予期しないエラーが発生しました" in exc_info.value.message
+    assert "ダウンロード中に予期しないエラーが発生しました" in str(exc_info.value)
 
 
 @pytest.mark.parametrize(
-    "file_name, content_type",
+    "file_name, content_type, error_message",
     [
-        ("test_file.pdf", "application/pdf"),
-        ("test_file.gif", "image/gif"),
+        (
+            "test_file.pdf",
+            "application/pdf",
+            "ファイルのContent-Typeが画像ではありません",
+        ),
+        ("test_file.gif", "image/gif", "サポートされていない画像形式です"),
     ],
 )
-def test_invalid_content_type(file_name, content_type, mock_aws_s3_client, s3_client):
+def test_invalid_content_type(
+    mock_aws_s3_client, s3_client, file_name, content_type, error_message
+):
     """Content-Typeが画像でない場合のテスト（lines 68-74のカバレッジ）"""
 
     mock_aws_s3_client.head_object.return_value = {
@@ -309,7 +316,7 @@ def test_invalid_content_type(file_name, content_type, mock_aws_s3_client, s3_cl
         "ContentType": content_type,
     }
 
-    with pytest.raises(S3BadRequest) as exc_info:
+    with pytest.raises(InvalidContentTypeError) as exc_info:
         s3_client.download_image_by_filename(file_name)
 
-    assert exc_info.value.code == 400
+    assert str(exc_info.value) == f"{error_message}: {content_type}"

@@ -1,13 +1,15 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, status
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from src.receipt_scanner_model.analyze import ReceiptDetail, get_receipt_detail
-from src.receipt_scanner_model.s3_client import S3Client
+from src.receipt_scanner_model.s3_client import S3Client, MAX_FILE_SIZE
 from src.receipt_scanner_model.logger_config import set_logger
 import tomllib
 import logging
 from pydantic import BaseModel, field_validator
 from src.receipt_scanner_model.error import (
-    S3BadRequest,
+    ContentSizeError,
+    InvalidContentTypeError,
     S3NotFound,
     S3Forbidden,
     S3ServiceUnavailable,
@@ -15,6 +17,8 @@ from src.receipt_scanner_model.error import (
     OpenAIAuthenticationError,
     OpenAIServiceUnavailable,
     OpenAIResponseFormatError,
+    CustomHTTPException,
+    ErrorCode,
 )
 from pathvalidate import ValidationError, validate_filename
 
@@ -29,13 +33,26 @@ with open("pyproject.toml", "rb") as f:
 app = FastAPI(version=version)
 
 
+@app.exception_handler(CustomHTTPException)
+async def custom_exception_handler(request, exc: CustomHTTPException):
+    """CustomHTTPExceptionを構造化されたエラーレスポンスに変換する"""
+    return JSONResponse(
+        status_code=exc.http_status_code,
+        content={
+            "error_type_code": exc.error_type_code.value,
+            "message": exc.message,
+        },
+    )
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc: RequestValidationError):
     """RequestValidationErrorをHTTPExceptionの形に変換する"""
     logger.exception("レシート解析中にエラーが起きました。")
-    raise HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        detail="レシート解析中にエラーが起きました。再度レシートをアップロードしてください。",
+    raise CustomHTTPException(
+        http_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        error_type_code=ErrorCode.CLIENT_ERROR,
+        message="リクエストのバリデーションに失敗しました。入力内容を確認してください。",
     )
 
 
@@ -44,54 +61,69 @@ class FileName(BaseModel):
 
     @field_validator("filename")
     @classmethod
-    def validate_filename(cls, value: str) -> str:
+    def check_filename(cls, value: str) -> str:
         try:
             validate_filename(value)
             return value
         except ValidationError as e:
-            logger.error(
-                f"無効なファイル名でエラーが発生しました。: {value}, reason: {str(e)}"
-            )
-            raise ValueError("無効なファイル名です。") from e
+            logger.error(f"無効なファイル名でエラーが発生しました。 {value}: {str(e)}")
+            raise ValueError(f"無効なファイル名です。 {value}: {str(e)}")
 
 
 def handle_receipt_exception(e: Exception, filename: str | None):
-    """例外を分類してHTTPExceptionに変換する
+    """例外を分類してCustomHTTPExceptionに変換する
 
     Args:
         e: キャッチされた例外
 
     Returns:
-        HTTPException: 適切なステータスコードとメッセージを持つHTTPException
+        CustomHTTPException: 構造化されたエラーレスポンスを持つCustomHTTPException
     """
     logger.exception(f"レシート解析中にエラーが起きました。ファイル名: {filename}")
 
-    if isinstance(e, (S3BadRequest, S3NotFound)):
-        return HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="レシート解析中にエラーが起きました。再度レシートをアップロードしてください。",
+    if isinstance(e, ContentSizeError):
+        return CustomHTTPException(
+            http_status_code=status.HTTP_400_BAD_REQUEST,
+            error_type_code=ErrorCode.SIZE_ERROR,
+            message=f"ダウンロードした画像サイズが0バイト以下か、{MAX_FILE_SIZE}より大きいです。ファイル名: {filename}",
+        )
+    if isinstance(e, InvalidContentTypeError):
+        return CustomHTTPException(
+            http_status_code=status.HTTP_400_BAD_REQUEST,
+            error_type_code=ErrorCode.INVALID_TYPE,
+            message=f"ダウンロードした画像のContent-Typeが不正です。ファイル名: {filename}",
+        )
+    elif isinstance(e, S3NotFound):
+        return CustomHTTPException(
+            http_status_code=status.HTTP_404_NOT_FOUND,
+            error_type_code=ErrorCode.CLIENT_ERROR,
+            message=f"指定されたファイル名({filename})が見つかりません。ファイルアップロードに問題がある可能性があります。",
+        )
+    elif isinstance(e, OpenAIResponseFormatError):
+        return CustomHTTPException(
+            http_status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            error_type_code=ErrorCode.SERVER_ERROR,
+            message="解析結果が予期せぬ形式でした。再度解析をすることで、正常に動作する場合があります。問題が継続する場合は、サポートまでお問い合わせください。",
         )
     elif isinstance(
-        e, (S3ServiceUnavailable, OpenAIServiceUnavailable, OpenAIResponseFormatError)
+        e, (S3ServiceUnavailable, S3InternalServerError, OpenAIServiceUnavailable)
     ):
-        return HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。",
-        )
-    elif isinstance(e, S3InternalServerError):
-        return HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。",
+        return CustomHTTPException(
+            http_status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            error_type_code=ErrorCode.SERVER_ERROR,
+            message="S3またはOpenAIのサービスが一時的に利用できません。時間をおいて再度お試しください。",
         )
     elif isinstance(e, (S3Forbidden, OpenAIAuthenticationError)):
-        return HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="レシート解析中にエラーが起きました。サポートまでお問い合わせください",
+        return CustomHTTPException(
+            http_status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            error_type_code=ErrorCode.SERVER_ERROR,
+            message="レシート解析中に権限エラーが起きました。",
         )
-    else:  # S3UnexpectedError, OpenAIUnexpectedErrorその他のエラー
-        return HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。問題が継続する場合は、サポートまでお問い合わせください",
+    else:  # S3BadRequest, OpenAIUnexpectedError, S3UnexpectedErrorを含むその他のエラー
+        return CustomHTTPException(
+            http_status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            error_type_code=ErrorCode.SERVER_ERROR,
+            message="レシート解析中にエラーが起きました。しばらくしてから再度お試しください。問題が継続する場合は、サポートまでお問い合わせください",
         )
 
 

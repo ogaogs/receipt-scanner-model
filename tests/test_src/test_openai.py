@@ -108,48 +108,36 @@ def test_analyze_image_response_format_error(mock_openai_client):
     with pytest.raises(OpenAIResponseFormatError) as exc_info:
         openai_handler.analyze_image(TEST_BASE64_IMAGE, TEST_IMAGE_TYPE)
 
-    assert exc_info.value.code == 503
-    assert exc_info.value.message == "OpenAIの応答の解析に失敗しました。"
+    assert exc_info.type == OpenAIResponseFormatError
+    assert str(exc_info.value) == "OpenAIのレスポンス形式が不正です"
 
 
 @pytest.mark.parametrize(
-    "exception_type, expected_exception, status_code, expected_message",
+    "exception_type, expected_exception",
     [
         (
             AuthenticationError,
             OpenAIAuthenticationError,
-            401,
-            "OpenAIの認証に失敗しました。APIキーを確認してください。",
         ),
         (
             PermissionDeniedError,
             OpenAIAuthenticationError,
-            401,
-            "OpenAIの認証に失敗しました。APIキーを確認してください。",
         ),
         (
             APITimeoutError,
             OpenAIServiceUnavailable,
-            503,
-            "OpenAIのサービスが一時的に利用できません。時間をおいて再度お試しください。",
         ),
         (
             InternalServerError,
             OpenAIServiceUnavailable,
-            503,
-            "OpenAIのサービスが一時的に利用できません。時間をおいて再度お試しください。",
         ),
         (
             RateLimitError,
             OpenAIServiceUnavailable,
-            503,
-            "OpenAIのサービスが一時的に利用できません。時間をおいて再度お試しください。",
         ),
         (
             Exception,
             OpenAIUnexpectedError,
-            500,
-            "OpenAIの予期しないエラーが発生しました。",
         ),
     ],
 )
@@ -158,8 +146,6 @@ def test_analyze_image_error_handling(
     mock_openai_client,
     exception_type,
     expected_exception,
-    status_code,
-    expected_message,
 ) -> None:
     if exception_type is Exception:
         mock_openai_client.beta.chat.completions.parse.side_effect = exception_type(
@@ -172,15 +158,12 @@ def test_analyze_image_error_handling(
         )
     else:
         # その他のOpenAI例外は特定の引数が必要
-        mock_response = mocker.MagicMock()
-        mock_response.status_code = status_code
         mock_openai_client.beta.chat.completions.parse.side_effect = exception_type(
-            message="OpenAIエラー", response=mock_response, body={}
+            message="OpenAIエラー", response=mocker.MagicMock(), body={}
         )
 
     openai_handler = OpenAIHandler()
     with pytest.raises(expected_exception) as exc_info:
         openai_handler.analyze_image(TEST_BASE64_IMAGE, TEST_IMAGE_TYPE)
 
-    assert exc_info.value.code == status_code
-    assert exc_info.value.message == expected_message
+    assert exc_info.type == expected_exception

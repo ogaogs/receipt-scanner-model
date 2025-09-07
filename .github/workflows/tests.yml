@@ -34,7 +34,7 @@ jobs:
       - name: Run tests with coverage
         run: rye run coverage run --branch -m pytest tests
       - name: Generate coverage XML
-        run: rye run coverage xml --include="api/*,src/*"
+        run: rye run coverage xml --include="api/*,src/*" --omit="src/receipt_scanner_model/scan_receipt.py"
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
         with:

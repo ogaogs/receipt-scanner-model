@@ -52,42 +52,21 @@ def test_get_receipt_detail_success(
 
 
 @pytest.mark.parametrize(
-    "exception, status_code, expected_message",
+    "exception",
     [
-        (
-            OpenAIAuthenticationError,
-            401,
-            "OpenAIの認証に失敗しました。APIキーを確認してください。",
-        ),
-        (
-            OpenAIServiceUnavailable,
-            503,
-            "OpenAIのサービスが一時的に利用できません。時間をおいて再度お試しください。",
-        ),
-        (
-            OpenAIUnexpectedError,
-            500,
-            "OpenAIの予期しないエラーが発生しました。",
-        ),
-        (
-            OpenAIResponseFormatError,
-            503,
-            "OpenAIの応答の解析に失敗しました。",
-        ),
+        OpenAIAuthenticationError,
+        OpenAIServiceUnavailable,
+        OpenAIUnexpectedError,
+        OpenAIResponseFormatError,
     ],
 )
 def test_get_receipt_detail_error_handling(
     mock_openai_handler,
     exception,
-    status_code,
-    expected_message,
 ):
-    mock_openai_handler.analyze_image.side_effect = exception(
-        status_code, expected_message
-    )
+    mock_openai_handler.analyze_image.side_effect = exception
 
     with pytest.raises(exception) as exc_info:
         get_receipt_detail(TEST_IMAGE_BYTES, TEST_IMAGE_TYPE)
 
-    assert exc_info.value.code == status_code
-    assert exc_info.value.message == expected_message
+    assert exc_info.type == exception
