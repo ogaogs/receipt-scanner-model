@@ -5,6 +5,8 @@ import logging
 from src.receipt_scanner_model.setting import setting
 from botocore.exceptions import ClientError
 from src.receipt_scanner_model.error import (
+    ContentSizeError,
+    InvalidContentTypeError,
     S3BadRequest,
     S3NotFound,
     S3Forbidden,
@@ -52,15 +54,15 @@ class S3Client:
 
             if content_length <= 0:
                 logger.error(f"ファイルサイズが0バイト以下です: {content_length} bytes")
-                raise S3BadRequest(
-                    400, f"ファイルサイズが0バイト以下です: {content_length} bytes"
+                raise ContentSizeError(
+                    f"ファイルサイズが0バイト以下です: {content_length} bytes"
                 )
             elif content_length > max_size:
                 logger.error(
                     f"ファイルサイズが制限を超えています: {content_length} bytes"
                 )
-                raise S3BadRequest(
-                    400, f"ファイルサイズが制限を超えています: {content_length} bytes"
+                raise ContentSizeError(
+                    f"ファイルサイズが制限を超えています: {content_length} bytes"
                 )
 
             content_type = head_response.get("ContentType", None)
@@ -69,13 +71,13 @@ class S3Client:
                 logger.error(
                     f"ファイルのContent-Typeが画像ではありません: {content_type}"
                 )
-                raise S3BadRequest(
-                    400, f"ファイルのContent-Typeが画像ではありません: {content_type}"
+                raise InvalidContentTypeError(
+                    f"ファイルのContent-Typeが画像ではありません: {content_type}"
                 )
             if content_type not in ["image/png", "image/jpeg"]:
                 logger.error(f"サポートされていない画像形式です: {content_type}")
-                raise S3BadRequest(
-                    400, f"サポートされていない画像形式です: {content_type}"
+                raise InvalidContentTypeError(
+                    f"サポートされていない画像形式です: {content_type}"
                 )
 
             # サイズ・画像タイプに問題なければダウンロード
@@ -94,50 +96,46 @@ class S3Client:
                     f"不正なリクエストです: {http_status_code} {error_message}"
                 )
                 raise S3BadRequest(
-                    http_status_code,
-                    f"不正なリクエストです: {error_message}",
+                    f"不正なリクエストです: {http_status_code} {error_message}"
                 )
             elif http_status_code == 404:
                 logger.error(
                     f"指定されたファイルがS3にありません: {http_status_code} {error_message}"
                 )
                 raise S3NotFound(
-                    http_status_code,
-                    f"指定されたファイルがS3にありません: {error_message}",
+                    f"指定されたファイルがS3にありません: {http_status_code} {error_message}"
                 )
             elif http_status_code == 403:
                 logger.error(
                     f"アクセスが拒否されました: {http_status_code} {error_message}"
                 )
                 raise S3Forbidden(
-                    http_status_code,
-                    f"アクセスが拒否されました: {error_message}",
+                    f"アクセスが拒否されました: {http_status_code} {error_message}"
                 )
             elif http_status_code == 503:
                 logger.error(
                     f"S3サービスが一時的に利用できません: {http_status_code} {error_message}"
                 )
                 raise S3ServiceUnavailable(
-                    http_status_code,
-                    f"S3サービスが一時的に利用できません: {error_message}",
+                    f"S3サービスが一時的に利用できません: {http_status_code} {error_message}"
                 )
             elif http_status_code == 500:
                 logger.error(
                     f"S3サービスでInternalServerErrorが発生しました: {http_status_code} {error_message}"
                 )
                 raise S3InternalServerError(
-                    http_status_code,
-                    f"S3サービスでInternalServerErrorが発生しました: {error_message}",
+                    f"S3サービスでInternalServerErrorが発生しました: {http_status_code} {error_message}"
                 )
             else:
                 logger.error(
                     f"ダウンロード中に予期しないエラーが発生しました: {http_status_code} {error_message}"
                 )
                 raise S3UnexpectedError(
-                    http_status_code,
-                    f"ダウンロード中に予期しないエラーが発生しました: {error_message}",
+                    f"ダウンロード中に予期しないエラーが発生しました: {http_status_code} {error_message}"
                 )
-        except S3BadRequest:
+        except ContentSizeError:
+            raise
+        except InvalidContentTypeError:
             raise
         except Exception as e:
             logger.error(f"ダウンロード中に予期しないエラーが発生しました: {e}")

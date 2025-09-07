@@ -64,21 +64,22 @@ def openai_error_handling(func):
         except (AuthenticationError, PermissionDeniedError) as e:
             logger.error(f"OpenAIの認証エラー: {str(e)}")
             raise OpenAIAuthenticationError(
-                401, "OpenAIの認証に失敗しました。APIキーを確認してください。"
+                "OpenAIの認証に失敗しました。APIキーを確認してください。"
             )
         except (
             APITimeoutError,
             RateLimitError,
             InternalServerError,
         ) as e:
-            logger.error(f"OpenAIの一時的なエラー: {str(e)}")
+            logger.error(f"OpenAI Completions APIでエラーが発生しました: {str(e)}")
             raise OpenAIServiceUnavailable(
-                503,
-                "OpenAIのサービスが一時的に利用できません。時間をおいて再度お試しください。",
+                f"OpenAI Completions APIでエラーが発生しました: {str(e)}",
             )
         except Exception as e:
             logger.error(f"OpenAIの予期しないエラー: {str(e)}")
-            raise OpenAIUnexpectedError(500, "OpenAIの予期しないエラーが発生しました。")
+            raise OpenAIUnexpectedError(
+                f"OpenAIの予期しないエラーが発生しました。: {str(e)}"
+            )
 
     return wrapper
 
@@ -128,7 +129,5 @@ class OpenAIHandler:
         )
         output = response.choices[0].message.parsed
         if not isinstance(output, ReceiptDetail):
-            raise OpenAIResponseFormatError(
-                code=503, message="OpenAIの応答の解析に失敗しました。"
-            )
+            raise OpenAIResponseFormatError("OpenAIのレスポンス形式が不正です")
         return output

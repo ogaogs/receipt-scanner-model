@@ -1,46 +1,76 @@
+from enum import Enum
+
+
+class ErrorCode(Enum):
+    """エラータイプ：SIZE_ERROR, INVALID_TYPEは400系に含まれるが、細かく分類するために分けている"""
+
+    SIZE_ERROR = "size_error"  # 画像サイズエラー
+    INVALID_TYPE = "invalid_type"  # 画像タイプエラー
+    CLIENT_ERROR = "client_error"  # 400系
+    SERVER_ERROR = "server_error"  # 500系
+
+
+class CustomHTTPException(Exception):
+    """カスタムHTTPException：構造化されたエラーレスポンスを返すため"""
+
+    def __init__(self, http_status_code: int, error_type_code: ErrorCode, message: str):
+        self.http_status_code = http_status_code
+        self.error_type_code = error_type_code
+        self.message = message
+        super().__init__(message)
+
+
 class ErrorResponse(Exception):
-    def __init__(self, code: int, message: str):
-        self.code = code
+    def __init__(self, status_code: int, error_type_code: ErrorCode, message: str):
+        self.status_code = status_code
+        self.error_type_code = error_type_code
         self.message = message
 
 
-# 400系でクライアントに返す
-class S3BadRequest(ErrorResponse):
+class ContentSizeError(Exception):
     pass
 
 
-class S3NotFound(ErrorResponse):
+class InvalidContentTypeError(Exception):
+    pass
+
+
+class S3BadRequest(Exception):
+    pass
+
+
+class S3NotFound(Exception):
     pass
 
 
 # 500系でクライアントに返す
-class S3Forbidden(ErrorResponse):
+class S3Forbidden(Exception):
     pass
 
 
-class S3ServiceUnavailable(ErrorResponse):
+class S3ServiceUnavailable(Exception):
     pass
 
 
-class S3InternalServerError(ErrorResponse):
+class S3InternalServerError(Exception):
     pass
 
 
-class S3UnexpectedError(ErrorResponse):
+class S3UnexpectedError(Exception):
     pass
 
 
-class OpenAIAuthenticationError(ErrorResponse):
+class OpenAIAuthenticationError(Exception):
     pass
 
 
-class OpenAIServiceUnavailable(ErrorResponse):
+class OpenAIServiceUnavailable(Exception):
     pass
 
 
-class OpenAIUnexpectedError(ErrorResponse):
+class OpenAIUnexpectedError(Exception):
     pass
 
 
-class OpenAIResponseFormatError(ErrorResponse):
+class OpenAIResponseFormatError(Exception):
     pass
