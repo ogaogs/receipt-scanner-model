@@ -20,13 +20,6 @@ class CustomHTTPException(Exception):
         super().__init__(message)
 
 
-class ErrorResponse(Exception):
-    def __init__(self, status_code: int, error_type_code: ErrorCode, message: str):
-        self.status_code = status_code
-        self.error_type_code = error_type_code
-        self.message = message
-
-
 class ContentSizeError(Exception):
     pass
 
