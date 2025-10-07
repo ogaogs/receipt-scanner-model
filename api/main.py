@@ -34,7 +34,7 @@ app = FastAPI(version=version)
 
 
 @app.exception_handler(CustomHTTPException)
-async def custom_exception_handler(request, exc: CustomHTTPException):
+async def custom_exception_handler(request: Request, exc: CustomHTTPException):
     """CustomHTTPExceptionを構造化されたエラーレスポンスに変換する"""
     return JSONResponse(
         status_code=exc.http_status_code,
@@ -160,18 +160,18 @@ async def root():
 
 
 @app.post("/receipt-analyze")
-def receipt_analyze(request: FileName) -> ReceiptDetail:
+def receipt_analyze(body: FileName) -> ReceiptDetail:
     """S3のファイル名からレシートを解析し、ReceiptDetailを返す
 
     Args:
-        request (FileName): ファイル名
+        body (FileName): ファイル名
 
     Returns:
         ReceiptDetail: 解析したレシート詳細
     """
     filename = None
     try:
-        filename = request.filename
+        filename = body.filename
         # S3Clientを初期化
         s3_client = S3Client()
 
