@@ -1,4 +1,4 @@
-from fastapi import FastAPI, status
+from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from src.receipt_scanner_model.analyze import ReceiptDetail, get_receipt_detail
@@ -34,7 +34,7 @@ app = FastAPI(version=version)
 
 
 @app.exception_handler(CustomHTTPException)
-async def custom_exception_handler(request, exc: CustomHTTPException):
+async def custom_exception_handler(request: Request, exc: CustomHTTPException):
     """CustomHTTPExceptionを構造化されたエラーレスポンスに変換する"""
     return JSONResponse(
         status_code=exc.http_status_code,
@@ -46,9 +46,33 @@ async def custom_exception_handler(request, exc: CustomHTTPException):
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request, exc: RequestValidationError):
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """RequestValidationErrorをHTTPExceptionの形に変換する"""
     logger.exception("レシート解析中にエラーが起きました。")
+
+    # Content-Typeチェック
+    content_type = request.headers.get("content-type", "")
+    if not content_type.startswith("application/json"):
+        return JSONResponse(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            content={
+                "error_type_code": ErrorCode.CLIENT_ERROR.value,
+                "message": "リクエストのContent-Typeが不正です。",
+            },
+        )
+
+    error_type = exc.errors()[0]["type"]
+
+    # フィールドの欠落やJSONの不正な場合は400 Bad Requestを返す
+    if error_type in ["missing", "json_invalid"]:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "error_type_code": ErrorCode.CLIENT_ERROR.value,
+                "message": "リクエストが不正です。",
+            },
+        )
+
     raise CustomHTTPException(
         http_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         error_type_code=ErrorCode.CLIENT_ERROR,
@@ -136,18 +160,18 @@ async def root():
 
 
 @app.post("/receipt-analyze")
-def receipt_analyze(request: FileName) -> ReceiptDetail:
+def receipt_analyze(body: FileName) -> ReceiptDetail:
     """S3のファイル名からレシートを解析し、ReceiptDetailを返す
 
     Args:
-        request (FileName): ファイル名
+        body (FileName): ファイル名
 
     Returns:
         ReceiptDetail: 解析したレシート詳細
     """
     filename = None
     try:
-        filename = request.filename
+        filename = body.filename
         # S3Clientを初期化
         s3_client = S3Client()
 

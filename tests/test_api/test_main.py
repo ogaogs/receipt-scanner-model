@@ -115,15 +115,44 @@ class TestInputValidation:
     リクエスト形式に関するテスト
     """
 
+    # 400 Bad Request
     def test_missing_filename_field(self, client: TestClient):
         """filenameフィールドが欠落"""
         response = client.post("/receipt-analyze", json={})
-        assert response.status_code == 422
+        assert response.status_code == 400
         assert response.json() == {
             "error_type_code": ErrorCode.CLIENT_ERROR.value,
-            "message": "リクエストのバリデーションに失敗しました。入力内容を確認してください。",
+            "message": "リクエストが不正です。",
         }
 
+    def test_invalid_json_format(self, client: TestClient):
+        """不正なJSONフォーマット"""
+        response = client.post(
+            "/receipt-analyze",
+            content="{filename: test.png}",
+            headers={"Content-Type": "application/json"},
+        )
+        assert response.status_code == 400
+        assert response.json() == {
+            "error_type_code": ErrorCode.CLIENT_ERROR.value,
+            "message": "リクエストが不正です。",
+        }
+
+    # 415 Unsupported Media Type
+    def test_invalid_content_type(self, client: TestClient):
+        """Content-Typeが不正"""
+        response = client.post(
+            "/receipt-analyze",
+            json={"filename": TEST_FILE_NAME},
+            headers={"Content-Type": "text/plain"},
+        )
+        assert response.status_code == 415
+        assert response.json() == {
+            "error_type_code": ErrorCode.CLIENT_ERROR.value,
+            "message": "リクエストのContent-Typeが不正です。",
+        }
+
+    # 422 Unprocessable Entity
     @pytest.mark.parametrize("empty_filename", ["", "   "])
     def test_empty_filename(self, client: TestClient, empty_filename):
         """filenameが空文字列"""
@@ -149,32 +178,6 @@ class TestInputValidation:
     def test_invalid_filename_type(self, client: TestClient, invalid_filename):
         """filenameが文字列以外"""
         response = client.post("/receipt-analyze", json={"filename": invalid_filename})
-        assert response.status_code == 422
-        assert response.json() == {
-            "error_type_code": ErrorCode.CLIENT_ERROR.value,
-            "message": "リクエストのバリデーションに失敗しました。入力内容を確認してください。",
-        }
-
-    def test_invalid_json_format(self, client: TestClient):
-        """不正なJSONフォーマット"""
-        response = client.post(
-            "/receipt-analyze",
-            content="{filename: test.png}",
-            headers={"Content-Type": "application/json"},
-        )
-        assert response.status_code == 422
-        assert response.json() == {
-            "error_type_code": ErrorCode.CLIENT_ERROR.value,
-            "message": "リクエストのバリデーションに失敗しました。入力内容を確認してください。",
-        }
-
-    def test_invalid_content_type(self, client: TestClient):
-        """Content-Typeが不正"""
-        response = client.post(
-            "/receipt-analyze",
-            json={"filename": TEST_FILE_NAME},
-            headers={"Content-Type": "text/plain"},
-        )
         assert response.status_code == 422
         assert response.json() == {
             "error_type_code": ErrorCode.CLIENT_ERROR.value,
