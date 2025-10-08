@@ -61,8 +61,8 @@ def openai_error_handling(func):
             return func(*args, **kwargs)
         except OpenAIResponseFormatError:
             raise
-        except (AuthenticationError, PermissionDeniedError) as e:
-            logger.error(f"OpenAIの認証エラー: {str(e)}")
+        except (AuthenticationError, PermissionDeniedError):
+            logger.error("OpenAIの認証エラー", exc_info=True)
             raise OpenAIAuthenticationError(
                 "OpenAIの認証に失敗しました。APIキーを確認してください。"
             )
@@ -70,16 +70,14 @@ def openai_error_handling(func):
             APITimeoutError,
             RateLimitError,
             InternalServerError,
-        ) as e:
-            logger.error(f"OpenAI Completions APIでエラーが発生しました: {str(e)}")
+        ):
+            logger.error("OpenAI Completions APIでエラーが発生しました", exc_info=True)
             raise OpenAIServiceUnavailable(
-                f"OpenAI Completions APIでエラーが発生しました: {str(e)}",
+                "OpenAI Completions APIでエラーが発生しました",
             )
-        except Exception as e:
-            logger.error(f"OpenAIの予期しないエラー: {str(e)}")
-            raise OpenAIUnexpectedError(
-                f"OpenAIの予期しないエラーが発生しました。: {str(e)}"
-            )
+        except Exception:
+            logger.error("OpenAIの予期しないエラー", exc_info=True)
+            raise OpenAIUnexpectedError("OpenAIの予期しないエラーが発生しました。")
 
     return wrapper
 
