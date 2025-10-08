@@ -45,7 +45,7 @@ def test_root(client: TestClient):
 
 def test_receipt_analyze_success(client: TestClient, mocker: MockFixture):
     """正常なレシート解析処理"""
-    test_file_type = "png"
+    test_file_type = "image/png"
     mock_s3_client = mocker.patch.object(
         S3Client,
         "download_image_by_filename",
@@ -80,7 +80,7 @@ def test_receipt_analyze_with_extra_fields(client: TestClient, mocker: MockFixtu
     # NOTE: 現在は正常系としているが、422にする可能性あり。
     """余分なフィールドがあっても正常処理されること"""
 
-    test_file_type = "png"
+    test_file_type = "image/png"
 
     mock_s3_client = mocker.patch.object(
         S3Client,
@@ -353,8 +353,11 @@ class TestInternalServerErrors:
 
     def test_get_receipt_detail_failure(self, client: TestClient, mocker: MockFixture):
         """get_receipt_detail関数でのエラー"""
+        test_file_type = "image/png"
         mocker.patch.object(
-            S3Client, "download_image_by_filename", return_value=MOCK_IMAGE_BYTES
+            S3Client,
+            "download_image_by_filename",
+            return_value=(MOCK_IMAGE_BYTES, test_file_type),
         )
         mocker.patch(
             "api.main.get_receipt_detail",
