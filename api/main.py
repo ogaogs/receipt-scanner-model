@@ -48,31 +48,29 @@ async def custom_exception_handler(request: Request, exc: CustomHTTPException):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """RequestValidationErrorをHTTPExceptionの形に変換する"""
-    logger.exception("レシート解析中にエラーが起きました。")
 
     # Content-Typeチェック
     content_type = request.headers.get("content-type", "")
     if not content_type.startswith("application/json"):
-        return JSONResponse(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            content={
-                "error_type_code": ErrorCode.CLIENT_ERROR.value,
-                "message": "リクエストのContent-Typeが不正です。",
-            },
+        logger.warning(f"リクエストのContent-Typeが不正です: {content_type}")
+        raise CustomHTTPException(
+            http_status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            error_type_code=ErrorCode.CLIENT_ERROR,
+            message="リクエストのContent-Typeが不正です。",
         )
 
     error_type = exc.errors()[0]["type"]
 
     # フィールドの欠落やJSONの不正な場合は400 Bad Requestを返す
     if error_type in ["missing", "json_invalid"]:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={
-                "error_type_code": ErrorCode.CLIENT_ERROR.value,
-                "message": "リクエストが不正です。",
-            },
+        logger.warning(f"リクエストが不正です: {exc.errors()}")
+        raise CustomHTTPException(
+            http_status_code=status.HTTP_400_BAD_REQUEST,
+            error_type_code=ErrorCode.CLIENT_ERROR,
+            message="リクエストが不正です。",
         )
 
+    logger.warning(f"リクエストのバリデーションに失敗しました: {exc.errors()}")
     raise CustomHTTPException(
         http_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         error_type_code=ErrorCode.CLIENT_ERROR,
@@ -90,8 +88,14 @@ class FileName(BaseModel):
             validate_filename(value)
             return value
         except ValidationError as e:
-            logger.error(f"無効なファイル名でエラーが発生しました。 {value}: {str(e)}")
-            raise ValueError(f"無効なファイル名です。 {value}: {str(e)}")
+            logger.warning(
+                f"無効なファイル名でエラーが発生しました。 {value}: {str(e)}"
+            )
+            raise CustomHTTPException(
+                http_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                error_type_code=ErrorCode.CLIENT_ERROR,
+                message="リクエストのバリデーションに失敗しました。入力内容を確認してください。",
+            )
 
 
 def handle_receipt_exception(e: Exception, filename: str | None):
@@ -103,7 +107,6 @@ def handle_receipt_exception(e: Exception, filename: str | None):
     Returns:
         CustomHTTPException: 構造化されたエラーレスポンスを持つCustomHTTPException
     """
-    logger.exception(f"レシート解析中にエラーが起きました。ファイル名: {filename}")
 
     if isinstance(e, ContentSizeError):
         return CustomHTTPException(
