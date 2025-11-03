@@ -29,11 +29,11 @@ class ReceiptDetail(TypedDict):
 
 ## 必要要件
 
-- [Rye](https://rye.astral.sh/) >= 0.42.0 を使用した環境設定
+- [uv](https://docs.astral.sh/uv/)を使用した環境設定
 
-  - [仮想環境の作成](https://rye.astral.sh/guide/basics/#first-sync)＊`Rye`をインストールしていない方は[こちら](https://rye.astral.sh/guide/installation/)<br>
+  - 仮想環境の作成 ＊`uv`をインストールしていない方は[こちら](https://docs.astral.sh/uv/getting-started/installation/)<br>
     ```sh
-    rye sync
+    uv sync
     ```
 
 - pre-commit の設定
@@ -41,7 +41,7 @@ class ReceiptDetail(TypedDict):
   - pre-commit のインストール
     ```sh
     # 下記の実行により、コミット時にpre-commitが実行される
-    rye run pre-commit install
+    uv run pre-commit install
     ```
 
 - [Tesseract](https://tesseract-ocr.github.io/tessdoc/Installation.html) = 5.5.0 のインストール
@@ -91,23 +91,23 @@ docker run -p 127.0.0.1:8000:8000 -e OPENAI_API_KEY receipt-scanner-model
 
 ## 開発者向け
 
-### Rye
+### uv
 
-プロジェクト管理に[Rye](https://rye.astral.sh/)を使用している。<br>
+プロジェクト管理に[uv](https://docs.astral.sh/uv/)を使用している。<br>
 
-[Rye の基本操作](https://rye.astral.sh/guide/basics/)
+uv の基本操作
 
 - 依存関係を変更した際、その都度実行する
   ```sh
-  rye sync
+  uv sync
   ```
-- [依存関係の追加](https://rye.astral.sh/guide/basics/#adding-dependencies)
+- [依存関係の追加](https://docs.astral.sh/uv/concepts/projects/dependencies/#adding-dependencies)
   ```sh
-  rye add "flask>=2.0"
+  uv add "flask>=2.0"
   ```
-- [依存関係の削除](https://rye.astral.sh/guide/basics/#remove-a-dependency)
+- [依存関係の削除](https://docs.astral.sh/uv/concepts/projects/dependencies/#removing-dependencies)
   ```sh
-  rye remove flask
+  uv remove flask
   ```
 
 ### テスト実行方法
