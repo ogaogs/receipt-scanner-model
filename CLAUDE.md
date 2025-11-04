@@ -39,10 +39,10 @@ This is a receipt scanner API that extracts information from receipt images usin
 
 ```bash
 # Install dependencies and setup virtual environment
-rye sync
+uv sync
 
 # Setup pre-commit hooks
-rye run pre-commit install
+uv run pre-commit install
 ```
 
 ### Running the Application
@@ -60,45 +60,45 @@ docker run -p 127.0.0.1:8000:8000 -e OPENAI_API_KEY receipt-scanner-model
 
 ```bash
 # Run all tests
-pytest tests
+uv run pytest tests
 
 # Run specific test directories
-pytest tests/test_api      # API tests
-pytest tests/test_src      # Source code tests
+uv run pytest tests/test_api      # API tests
+uv run pytest tests/test_src      # Source code tests
 
 # Run single test file
-pytest tests/test_api/test_main.py
+uv run pytest tests/test_api/test_main.py
 
 # Run with coverage (c1 coverage measurement)
-coverage run --branch -m pytest tests
-coverage report --show-missing --include="api/*,src/*"
+uv run coverage run --branch -m pytest tests
+uv run coverage report --show-missing --include="api/*,src/*"
 ```
 
 ### Code Quality
 
 ```bash
 # Lint and format code (via pre-commit)
-rye run pre-commit run --all-files
+uv run pre-commit run --all-files
 
 # Manual linting
-rye run ruff check
-rye run ruff format
+uv run ruff check
+uv run ruff format
 
 # Type checking
-rye run pyright
+uv run pyright
 ```
 
 ### Dependencies
 
 ```bash
 # Add new dependency
-rye add "package>=version"
+uv add "package>=version"
 
 # Remove dependency
-rye remove package
+uv remove package
 
 # Sync after changes
-rye sync
+uv sync
 ```
 
 ## Environment Variables
