@@ -1,28 +1,16 @@
 ARG PYTHON_VERSION
-FROM python:${PYTHON_VERSION}-slim-bookworm
-
-RUN apt-get update \
-    && apt-get install -y software-properties-common \
-    && apt-get install -y python3-launchpadlib \
-    && add-apt-repository ppa:alex-p/tesseract-ocr5 \
-    && apt-get -y install tesseract-ocr \
-    libtesseract-dev \
-    libleptonica-dev \
-    tesseract-ocr-jpn \
-    tesseract-ocr-script-jpan
-
-RUN pip install uv
+FROM python:${PYTHON_VERSION}-slim-trixie
+COPY --from=ghcr.io/astral-sh/uv:0.5.13 /uv /uvx /bin/
 
 WORKDIR /app
 COPY ./pyproject.toml ./pyproject.toml
-COPY ./requirements.lock ./requirements.lock
-COPY ./requirements-dev.lock ./requirements-dev.lock
+COPY ./uv.lock ./uv.lock
 COPY ./README.md ./README.md
-RUN uv pip install --no-cache --system -r requirements.lock
+RUN uv sync --frozen --no-dev
 
 COPY ./src ./src
 COPY ./api ./api
 
 EXPOSE 8000
 
-CMD ["uvicorn", "api.main:app", "--reload", "--host", "0.0.0.0"]
+CMD ["uv", "run", "uvicorn", "api.main:app", "--host", "0.0.0.0"]
