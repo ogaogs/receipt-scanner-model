@@ -86,7 +86,7 @@ uvicorn api.main:app --reload
 ```sh
 docker build . -t receipt-scanner-model --build-arg PYTHON_VERSION="$(cat .python-version)"
 
-docker run -p 127.0.0.1:8000:8000 -e OPENAI_API_KEY receipt-scanner-model
+docker run -p 127.0.0.1:8000:8000 --env-file=.env receipt-scanner-model
 ```
 
 ## 開発者向け
